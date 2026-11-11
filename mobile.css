@@ -1,0 +1,150 @@
+/* Phone play uses the whole landscape viewport. The center has no dock. */
+.orientation-guard[hidden]{display:none}
+.orientation-guard{position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;margin:0;width:100%;height:100%;max-width:none;max-height:none;border:0;padding:max(24px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(24px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left));background:#101a14;color:#e3dfc8;text-align:center;outline:0}
+.orientation-guard::backdrop{background:#101a14}
+.orientation-guard>svg{width:64px;height:64px;color:#c9af7a;stroke-width:1.1}
+.orientation-guard strong{font-size:17px;font-weight:500;letter-spacing:1px}
+.orientation-guard p{font-size:13px;color:#a9b69b}
+body.mobile-portrait-blocked #panel-dialog{visibility:hidden;pointer-events:none}
+body.mobile-portrait-blocked .orientation-guard{visibility:visible}
+body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right:max(12px,env(safe-area-inset-right));--phone-top:max(8px,env(safe-area-inset-top));--phone-bottom:max(12px,env(safe-area-inset-bottom));--hud-menu-height:53px;--modal-close-size:44px;overscroll-behavior:none}
+@media(orientation:landscape){
+ body.mobile-phone :is(.game-shell,.game-main,.arena){height:100dvh}
+ body.mobile-phone .game-topbar{top:var(--phone-top);left:calc(var(--phone-left) + 188px);right:calc(var(--phone-right) + 242px);width:auto;height:30px;padding:0;background:none;border:0;justify-content:center;pointer-events:none}
+ body.mobile-phone .game-topbar .chapter-label{display:flex;max-width:100%;gap:5px;line-height:1.3;font-size:10px}
+ body.mobile-phone .game-topbar .chapter-label b{font-size:12px;letter-spacing:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+ body.mobile-phone .game-topbar :is(#arena-location,#arena-location-divider){display:none}
+ body.mobile-phone .game-shell:has(.arena.in-camp #camp-interact:not(.hidden)) .game-topbar{visibility:hidden}
+ body.mobile-phone .bottom-nav{top:var(--phone-top);right:var(--phone-right);bottom:auto;left:auto;height:var(--hud-menu-height);width:230px;padding:0;gap:2px;justify-content:flex-end;border:0;background:none;box-shadow:none}
+ body.mobile-phone .bottom-nav>button{flex:0 0 44px;flex-direction:column;min-width:44px;width:44px;min-height:44px;gap:2px;padding:14px 0 3px;border-radius:4px;font-size:9px;line-height:1.2;letter-spacing:0}
+ body.mobile-phone .bottom-nav>button svg{width:23px;height:23px}
+ body.mobile-phone .bottom-nav>button.active:after{bottom:0}
+ body.mobile-phone .combat-dock{inset:0;bottom:0;left:0;width:auto;max-width:none;transform:none;display:block;pointer-events:none}
+ body.mobile-phone .combat-actions{display:contents}
+ body.mobile-phone .combat-dock .resource-panel{position:absolute;left:var(--phone-left);top:var(--phone-top);width:174px;min-width:0;padding:3px 7px 5px;border-color:#71805466;background:#142319c9;box-shadow:none;pointer-events:none}
+ body.mobile-phone .combat-dock .mana-resource{top:calc(var(--phone-top) + 33px)}
+ body.mobile-phone .resource-panel .resource-heading small,body.mobile-phone .resource-panel>small{display:none}
+ body.mobile-phone .resource-heading{font-size:10px;line-height:1.3;margin-bottom:3px}
+ body.mobile-phone .resource-heading b{font-size:10px}
+ body.mobile-phone .resource-track{height:5px}
+ body.mobile-phone .skill-bar{position:absolute;right:var(--phone-right);bottom:var(--phone-bottom);width:204px;height:142px;display:block;padding:0;pointer-events:none}
+ body.mobile-phone .skill-bar .skill-button{position:absolute;width:62px;height:62px;min-width:44px;min-height:44px;border-radius:50%;background:radial-gradient(#3c512fe8,#142417e0);border-color:#ad9d6f9c;box-shadow:inset 0 0 0 3px #101b14bb;pointer-events:auto;touch-action:manipulation}
+ body.mobile-phone .skill-bar .skill-button svg{width:27px;height:27px;margin-top:-10px}
+ body.mobile-phone .skill-bar .skill-button small{position:absolute;top:auto;bottom:7px;left:4px;right:4px;max-width:none;font-size:9px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e1dfc4}
+ body.mobile-phone .skill-bar .skill-button :is(kbd,em){display:none}
+ body.mobile-phone .skill-bar [data-action=skill0]{right:70px;bottom:0}
+ body.mobile-phone .skill-bar [data-action=skill1]{right:70px;bottom:70px}
+ body.mobile-phone .skill-bar [data-action=skill2]{right:0;bottom:70px}
+ body.mobile-phone .skill-bar [data-action=dash]{right:0;bottom:0}
+ body.mobile-phone .skill-bar [data-action=summon]{right:148px;width:48px;height:48px;min-width:44px;min-height:44px;border-radius:5px;background:#18291ee0}
+ body.mobile-phone .skill-bar [data-action=summon]{bottom:0}
+ body.mobile-phone .skill-bar [data-action=summon] svg{width:21px;height:21px;margin-top:-11px}
+ body.mobile-phone .skill-bar [data-action=summon] small{bottom:5px;font-size:8px}
+ body.mobile-phone .flask-belt{position:absolute;right:var(--phone-right);bottom:calc(var(--phone-bottom) + 154px);display:flex;gap:7px;padding:0;pointer-events:auto}
+ body.mobile-phone .flask-belt>button{width:44px;height:44px;min-width:44px;min-height:44px}
+ body.mobile-phone .flask-belt>button>svg{width:18px;height:18px;position:static;margin:0}
+ body.mobile-phone .flask-belt>button small{font-size:7px;line-height:1.2;margin:0;letter-spacing:0}
+ body.mobile-phone .flask-belt>button>b{font-size:7px;line-height:1.1}
+ body.mobile-phone .flask-belt>button>em{display:none}
+ body.mobile-phone .flask-belt kbd{display:none}
+ body.mobile-phone .touch-attack{display:block;right:calc(var(--phone-right) + 204px);bottom:calc(var(--phone-bottom) + 154px)}
+ body.mobile-phone .touch-attack button{width:44px;height:44px;border-radius:5px;gap:0;box-shadow:none;background:#263c26dd}
+ body.mobile-phone .touch-attack button svg{width:19px;height:19px}
+ body.mobile-phone .touch-attack button small{font-size:8px}
+ body.mobile-phone .touch-joystick,body.mobile-phone .arena.in-camp .touch-joystick{display:block;left:calc(var(--phone-left) + 8px);bottom:calc(var(--phone-bottom) + 8px);width:112px;height:112px;opacity:1;pointer-events:auto;background:#15261c88;border-color:#becb9c77;touch-action:none}
+ body.mobile-phone #stick{left:50%;top:50%;width:42px;height:42px;margin:-21px 0 0 -21px}
+ body.mobile-phone .arena:not(.in-combat):not(.in-camp) .touch-joystick{opacity:.18;pointer-events:none}
+ body.mobile-phone .auto-combat-status,body.mobile-phone .game-feed,body.mobile-phone .game-save-state{display:none}
+ body.mobile-phone .experience-strip{bottom:0}
+ body.mobile-phone .experience-strip>div{height:2px}
+ body.mobile-phone .experience-strip>span{display:none}
+ body.mobile-phone .player-status-hud{left:var(--phone-left);top:calc(var(--phone-top) + 65px);width:218px;max-width:calc(100% - 260px);gap:4px;pointer-events:none}
+ body.mobile-phone .arena.in-camp .player-status-hud{top:var(--phone-top);max-width:min(218px,31vw)}
+ body.mobile-phone .route-hud{font-size:10px}
+ body.mobile-phone .player-status-hud .quest-tracker{max-width:220px}
+ body.mobile-phone .player-status-hud .quest-tracker b{max-width:180px;font-size:10px}
+ body.mobile-phone .run-progress{font-size:9px}
+ body.mobile-phone .run-progress strong{font-size:10px}
+ body.mobile-phone .run-progress .run-clock{font-size:9px;gap:4px}
+ body.mobile-phone .run-progress #run-time{font-size:10px}
+ body.mobile-phone .boss-bar{top:calc(var(--phone-top) + 38px);width:min(300px,38vw)}
+ body.mobile-phone .camp-interact{min-height:44px}
+ body.mobile-phone .camp-interact kbd{display:none}
+ /* Panels retain one content scroll in landscape, with the existing X control. */
+ body.mobile-phone #panel-dialog{width:calc(100vw - var(--phone-left) - var(--phone-right));max-width:1100px;height:calc(100dvh - var(--phone-top) - var(--phone-bottom));max-height:calc(100dvh - var(--phone-top) - var(--phone-bottom));margin:auto;padding:0;overflow:hidden;grid-template-rows:auto auto minmax(0,1fr)}
+ body.mobile-phone #panel-dialog[open]{display:flex;flex-direction:column}
+ body.mobile-phone #panel-dialog .dialog-header{position:relative;min-height:52px;padding:4px 8px;gap:6px;flex:none}
+ body.mobile-phone #panel-tabs{overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-width:0}
+ body.mobile-phone #panel-dialog #panel-tabs>button{min-height:40px;padding:4px 8px;font-size:11px}
+ body.mobile-phone #panel-dialog #dialog-body{flex:1 1 auto;min-height:0;max-height:none;height:auto;padding:8px 10px 12px;overflow:auto;overscroll-behavior:contain}
+ body.mobile-phone #settings-tools{flex:none;margin:8px 10px 0}
+ body.mobile-phone #panel-dialog :is(.backpack-scroll,.stash-scroll,.skill-list,.skills-list,.family-skills,.inventory-view,.paperdoll-pane,.backpack-pane,.stash-pane){max-height:none;height:auto;overflow:visible}
+ body.mobile-phone #panel-dialog .passive-board{min-height:240px;height:calc(100dvh - 150px)}
+ body.mobile-phone .inventory-dialog.equipment-inspector-layout #dialog-body{display:block}
+ body.mobile-phone .inventory-dialog.equipment-inspector-layout #dialog-body>section,body.mobile-phone .inventory-dialog.equipment-inspector-layout #dialog-body>.paperdoll-pane{margin-bottom:8px}
+ body.mobile-phone #toasts{bottom:var(--phone-bottom);left:50%;right:auto;transform:translateX(-50%);max-width:calc(100% - 460px);pointer-events:none}
+}
+
+@media(orientation:landscape){
+ body.mobile-phone.blood-resource .combat-dock{display:block;max-width:none}
+ body.mobile-phone .skill-bar .skill-button.unavailable{background:#252c25;border-color:#7b8073;filter:grayscale(1)}
+ body.mobile-phone .skill-bar .skill-button .action-reason{inset:auto -8px -13px;font-size:8px;line-height:1.15;max-height:20px;padding:1px 2px;background:#111a12eb;border-radius:2px;color:#d0d3c5;white-space:normal}
+ body.mobile-phone .skill-bar .skill-button .action-reason[hidden]{display:none}
+ body.mobile-phone .skill-bar [data-action=summon] .action-reason{left:-3px;right:-3px;bottom:-13px;font-size:7px}
+ body.mobile-phone #panel-dialog :is(.d2-workbench,.d2-tree-pane,.d2-detail,.family-list,.available-library){height:auto;max-height:none;overflow:visible}
+ body.mobile-phone #panel-dialog .d2-detail{position:static}
+ body.mobile-phone .family-budget{gap:4px 12px;padding:6px 9px;font-size:11px}
+ body.mobile-phone .family-card{padding:8px 10px}
+ body.mobile-phone .result-overlay{justify-content:flex-start;padding:8px 15px 25px;overflow:auto}
+ body.mobile-phone .result-overlay>svg{display:none}
+ body.mobile-phone .result-overlay h2{font-size:17px;margin:3px 0}
+ body.mobile-phone .result-overlay .result-stats{margin:5px 0;gap:20px}
+ body.mobile-phone .death-summary{padding:7px 9px;margin:5px 0}
+}
+
+@media(orientation:landscape){
+ body.mobile-phone #expedition-risk-hud{top:calc(var(--phone-top) + 100px);right:calc(var(--phone-right) + 70px);max-width:min(280px,36vw);font-size:10px}
+ body.mobile-phone #expedition-risk-hud summary{min-height:30px;display:flex;align-items:center;justify-content:flex-end;padding:3px 6px;background:#15221bd9;border:1px solid #67583d;border-radius:3px}
+ body.mobile-phone #expedition-risk-hud .risk-summary{max-height:120px;margin-top:2px}
+}
+
+@media(orientation:landscape){
+ body.mobile-phone #panel-dialog.route-dialog .adventure-tabs{flex-wrap:nowrap;margin:0;gap:2px;padding:2px;flex:0 0 auto}
+ body.mobile-phone #panel-dialog.route-dialog .adventure-tabs button{min-height:38px;padding:6px 12px;font-size:12px}
+ body.mobile-phone #panel-dialog.route-dialog .route-context{overflow:hidden;text-overflow:ellipsis;min-width:0}
+ body.mobile-phone #panel-dialog.route-dialog.campaign-selection-dialog #dialog-body{display:block;flex:1 1 auto;overflow:auto;padding:8px 10px}
+ body.mobile-phone .campaign-difficulty{margin-bottom:10px}
+ body.mobile-phone .campaign-difficulty .expedition-difficulties>button{min-height:40px;flex:0 1 auto;padding:5px 10px}
+ body.mobile-phone .difficulty-overview{padding:7px 9px}.difficulty-overview>small{display:block}
+ body.mobile-phone .chapter-card-picture{max-height:125px}.chapter-card-art{height:auto}
+ body.mobile-phone .chapter-card-content p{margin-bottom:7px}
+}
+
+@media(orientation:landscape){
+ body.mobile-phone .paid-map-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 10px}
+ body.mobile-phone .paid-map-wallet{grid-column:1;gap:5px 10px}
+ body.mobile-phone .paid-map-wallet .paid-emblems{margin-left:0}
+ body.mobile-phone .paid-map-options{grid-column:2}
+ body.mobile-phone .paid-map-controls:has(.paid-map-options[open]) .paid-map-wallet,body.mobile-phone .paid-map-options[open],body.mobile-phone .paid-map-setup,body.mobile-phone .paid-map-controls>.risk-ticket-note{grid-column:1/-1}
+ body.mobile-phone .paid-map-wallet>button,body.mobile-phone .paid-option-row .rift-options button{min-height:38px}
+ body.mobile-phone .paid-map-options>summary{min-height:38px;display:list-item;padding:10px}
+ body.mobile-phone .paid-map-action>button{min-height:40px;padding:7px 12px}
+ body.mobile-phone .paid-map-card .chapter-card-picture{max-height:100px}
+ body.mobile-phone .paid-map-card .map-feature{min-height:33px}
+ body.mobile-phone .paid-map-setup{gap:7px 18px}
+}
+
+/* The landscape atlas and its details use only the panel's content scroll. */
+@media(orientation:landscape){
+ body.mobile-phone #panel-dialog.skill-atlas-dialog{max-width:1320px}
+ body.mobile-phone #panel-dialog.skill-atlas-dialog #dialog-body{display:block;padding:8px 10px 12px;overflow:auto}
+ body.mobile-phone #panel-dialog.skill-atlas-dialog .d2-workbench{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;height:auto;max-height:none;overflow:visible}
+ body.mobile-phone #panel-dialog.skill-atlas-dialog .d2-tree-pane.skill-atlas{display:block;height:auto;max-height:none;overflow:visible}
+ body.mobile-phone #panel-dialog.skill-atlas-dialog .atlas-canvas{height:var(--atlas-height,var(--atlas-fallback-height,540px));min-width:480px}
+ body.mobile-phone #panel-dialog.skill-atlas-dialog .d2-detail,body.mobile-phone #panel-dialog.skill-atlas-dialog .d2-detail.mobile-detail-open{display:block;position:static;inset:auto;width:auto;height:auto;max-height:none;overflow:visible;box-shadow:none;padding:10px 11px 12px}
+ body.mobile-phone .skill-atlas-dialog .d2-tabs{gap:5px;margin-bottom:8px}
+ body.mobile-phone .skill-atlas-dialog .d2-tabs>button{min-height:44px;padding:6px 5px;font-size:12px}
+ body.mobile-phone .skill-atlas-dialog .d2-node.atlas-node{width:88px}
+ body.mobile-phone .skill-atlas-dialog .d2-detail-title h3{font-size:16px}
+ body.mobile-phone .skill-atlas-dialog .talent-sheet-close,body.mobile-phone .skill-atlas-dialog .mobile-talent-list{display:none}
+}
