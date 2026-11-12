@@ -26,7 +26,8 @@ body:has(.arena.in-combat) #game-notices{bottom:104px}
 .orientation-guard p{font-size:13px;color:#a9b69b}
 body.mobile-portrait-blocked #panel-dialog{visibility:hidden;pointer-events:none}
 body.mobile-portrait-blocked .orientation-guard{visibility:visible}
-body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right:max(12px,env(safe-area-inset-right));--phone-top:max(8px,env(safe-area-inset-top));--phone-bottom:max(12px,env(safe-area-inset-bottom));--hud-menu-height:53px;--modal-close-size:44px;overscroll-behavior:none}
+body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right:max(12px,env(safe-area-inset-right));--phone-top:max(8px,env(safe-area-inset-top));--phone-bottom:max(12px,env(safe-area-inset-bottom));--hud-menu-height:53px;--modal-close-size:44px;overscroll-behavior:none;touch-action:manipulation}
+body.mobile-phone #panel-dialog{touch-action:manipulation}
 @media(orientation:landscape){
  body.mobile-phone :is(.game-shell,.game-main,.arena){height:100dvh}
  body.mobile-phone .game-topbar{top:var(--phone-top);left:calc(var(--phone-left) + 188px);right:calc(var(--phone-right) + 242px);width:auto;height:30px;padding:0;background:none;border:0;justify-content:center;pointer-events:none}
@@ -47,7 +48,8 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
  body.mobile-phone .resource-heading b{font-size:10px}
  body.mobile-phone .resource-track{height:5px}
  body.mobile-phone .skill-bar{position:absolute;right:var(--phone-right);bottom:var(--phone-bottom);width:204px;height:142px;display:block;padding:0;pointer-events:none}
- body.mobile-phone .skill-bar .skill-button{position:absolute;width:62px;height:62px;min-width:44px;min-height:44px;border-radius:50%;background:radial-gradient(#3c512fe8,#142417e0);border-color:#ad9d6f9c;box-shadow:inset 0 0 0 3px #101b14bb;pointer-events:auto;touch-action:manipulation}
+ body.mobile-phone .skill-bar .skill-button{position:absolute;width:62px;height:62px;min-width:44px;min-height:44px;border-radius:50%;background:radial-gradient(#3c512fe8,#142417e0);border-color:#ad9d6f9c;box-shadow:inset 0 0 0 3px #101b14bb;pointer-events:auto;touch-action:none}
+ body.mobile-phone :is(.skill-bar .skill-button,.flask-belt .flask-slot,#touch-attack)>*{pointer-events:none}
  body.mobile-phone .skill-bar .skill-button svg{width:27px;height:27px;margin-top:-10px}
  body.mobile-phone .skill-bar .skill-button small{position:absolute;top:auto;bottom:7px;left:4px;right:4px;max-width:none;font-size:9px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e1dfc4}
  body.mobile-phone .skill-bar .skill-button :is(kbd,em){display:none}
@@ -60,7 +62,7 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
  body.mobile-phone .skill-bar [data-action=summon] svg{width:21px;height:21px;margin-top:-11px}
  body.mobile-phone .skill-bar [data-action=summon] small{bottom:5px;font-size:8px}
  body.mobile-phone .flask-belt{position:absolute;right:var(--phone-right);bottom:calc(var(--phone-bottom) + 154px);display:flex;gap:7px;padding:0;pointer-events:auto}
- body.mobile-phone .flask-belt>button{width:44px;height:44px;min-width:44px;min-height:44px}
+ body.mobile-phone .flask-belt>button{width:44px;height:44px;min-width:44px;min-height:44px;touch-action:none}
  body.mobile-phone .flask-belt>button>svg{width:18px;height:18px;position:static;margin:0}
  body.mobile-phone .flask-belt>button small{font-size:7px;line-height:1.2;margin:0;letter-spacing:0}
  body.mobile-phone .flask-belt>button>b{font-size:7px;line-height:1.1}
@@ -372,6 +374,8 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
   grid-template-columns:repeat(auto-fill,minmax(36px,1fr));gap:3px;align-content:start;min-height:0
  }
  body.mobile-phone #panel-dialog .inventory-view .backpack-grid .inventory-cell{height:auto;min-height:0;aspect-ratio:1}
+ body.mobile-phone #panel-dialog .inventory-view .backpack-grid [data-inventory-item]{touch-action:pan-y;-webkit-touch-callout:none}
+ body.mobile-phone #panel-dialog .inventory-view :is(.paperdoll,.potion-equipment-slots) [data-inventory-item]{touch-action:none;-webkit-touch-callout:none}
  body.mobile-phone #panel-dialog .inventory-view .gear-inspector-tools{position:static;gap:2px;margin-bottom:3px;padding-bottom:2px}
  body.mobile-phone #panel-dialog .inventory-view :is(.gear-inspector-tools button,.ring-targets button,.potion-equip-targets button){
   min-height:28px;padding:2px 3px;font-size:10px

@@ -2,7 +2,7 @@ import {CombatAudio,savedVolume,storeVolume,soundForSkill,soundForEffect} from '
 import {createGameNotices} from './game-notices.js?v=143';
 import {majorEnemyArea,majorEnemyCharge,majorEnemyIntent} from './enemy-warnings.js?v=108';
 import {createCloudClient} from './cloud-client.js?v=108';
-import {RELEASE_NOTES} from './release-notes.mjs?v=145';
+import {RELEASE_NOTES} from './release-notes.mjs?v=146';
 import {renderReleaseHistory} from './release-history.js?v=134';
 import {createVerifiedPanel} from './verified-ui.js?v=135';
 import {MANA_SIPHON_RATE,manaSiphonBudget} from './mana-economy.js?v=108';
@@ -23,7 +23,7 @@ import * as BasicAttacks from './basic-attacks.js?v=129';
 import * as InventoryPages from './inventory-pages.js?v=144';
 import {SceneInteraction,CursorMovement,sceneTargetAt,leftClickAction,manualSkillSlot,flaskKeySlot,navigationPanel,ACTIVE_SKILL_KEYS,ACTIVE_SKILL_LABELS,FLASK_KEYS,DODGE_KEY,DODGE_LABEL} from './scene-input.js?v=108';
 import {createSceneTransition} from './scene-transition.js?v=143';
-import {installMobileControls} from './mobile-controls.js?v=108';
+import {installMobileControls} from './mobile-controls.js?v=146';
 import {CombatInput} from './combat-input.js?v=108';
 import {decodeProfileBackup,encodeProfileBackup,openProfileStore} from './profile-storage.js?v=121';
 import {clearCampaignCheckpoints,settleInterruptedPaidRun,takePaidRunLock} from './local-expedition-save.js?v=108';
@@ -1056,7 +1056,7 @@ window.addEventListener('mouseup',event=>{releaseMouse(event.button);movementInp
 let joyPointer=null;const joystick=$('#joystick');function moveJoystick(ev){if(ev.pointerId!==joyPointer)return;let r=joystick.getBoundingClientRect(),x=ev.clientX-r.left-r.width/2,y=ev.clientY-r.top-r.height/2,n=Math.hypot(x,y),limit=r.width*.32;if(n>limit){x=x/n*limit;y=y/n*limit;}joy={x:x/limit,y:y/limit};$('#stick').style.transform=`translate(${x}px,${y}px)`;}
 joystick.addEventListener('pointerdown',ev=>{ev.preventDefault();joyPointer=ev.pointerId;joystick.setPointerCapture(ev.pointerId);moveJoystick(ev);});joystick.addEventListener('pointermove',moveJoystick);for(let type of ['pointerup','pointercancel','lostpointercapture'])joystick.addEventListener(type,ev=>{if(ev.pointerId===joyPointer){joyPointer=null;joy={x:0,y:0};$('#stick').style.transform='';}});
 const attack=$('#touch-attack');attack.addEventListener('click',()=>configureAutoEnabled(c.autoEnabled===false));
-installMobileControls({onBlocked(value){mobileBlocked=value;updatePause();},clearInput:release});
+installMobileControls({onBlocked(value){mobileBlocked=value;updatePause();},clearInput:()=>{release();clearInventoryDrag();}});
 function loop(now){
  if(!storageReady){lastFrame=now;requestAnimationFrame(loop);return;}
  const dt=Math.min(.05,(now-lastFrame)/1000);lastFrame=now;
@@ -1633,16 +1633,19 @@ function renderCharacterStats(){
 }
 function shieldStatsMarkup(item){if(item.slot!=='offhand'||!isShield(item))return '';const base=M.WEAPON_TYPES[item.weaponType],affixes=M.itemAffixes(item),bonus=key=>affixes.filter(a=>a.key===key).reduce((n,a)=>n+a.value,0),chance=base.block,effect=base.blockReduction??.5,extra=bonus('block')||bonus('blockReduction');return `<section class="shield-block-stats"><dl class="tooltip-base"><div><dt>基礎格擋率</dt><dd>${percent(chance)}</dd></div><div><dt>格擋成功減傷</dt><dd>${percent(effect)}</dd></div>${extra?`<div><dt>此盾總格擋率</dt><dd>${percent(Math.min(base.blockCap,chance+bonus('block')))}</dd></div><div><dt>此盾總格擋減傷</dt><dd>${percent(Math.min(.85,effect+bonus('blockReduction')))}</dd></div>`:''}</dl><small>成功格擋降低該次命中傷害，再由護盾吸收剩餘傷害。${base.name}格擋率上限 ${percent(base.blockCap)}，格擋減傷上限 85%。</small></section>`;}
 function inventoryItem(id,from){if(['resource','flask-bag','flask-equipped','flask-stash'].includes(from)){const entry=Inventory.find(state,c.id,id,from);return entry?.item??entry;}return from==='stash'?state.stash.find(item=>item.id===id):from==='equipped'?Object.values(c.equipment).find(item=>item.id===id):c.bag.find(item=>item.id===id);}
+function nativeInventoryDragEnabled(from){
+ return panel==='inventory'&&!inventoryDiscardBatch&&!document.body.classList.contains('mobile-phone')||panel==='stash'&&from!=='resource';
+}
 
 function inventoryCell(item,from,slot=null,stashSlot=null){
- if(item&&(from==='resource'||Inventory.isFlask(item))){const entry=Inventory.find(state,c.id,item.id,from);return entry?carriedItemCell(entry,{selected:inventorySelection?.id===item.id&&inventorySelection?.from===from,draggable:panel==='inventory'||panel==='stash'&&from!=='resource',flaskSlot:from==='flask-equipped'?slot:null}):'';}
+ if(item&&(from==='resource'||Inventory.isFlask(item))){const entry=Inventory.find(state,c.id,item.id,from);return entry?carriedItemCell(entry,{selected:inventorySelection?.id===item.id&&inventorySelection?.from===from,draggable:nativeInventoryDragEnabled(from),flaskSlot:from==='flask-equipped'?slot:null}):'';}
  const batch=panel==='inventory'&&inventoryDiscardBatch,eligible=batch&&from==='bag';
  const selected=batch?!!eligible&&batch.ids.has(item?.id):inventorySelection?.id===item?.id&&inventorySelection?.from===from;
  const dropAttribute=stashSlot!==null?`data-stash-slot="${stashSlot}" data-stash-drop`:'data-bag-drop';
  if(!item)return `<div class="inventory-cell empty-cell" ${dropAttribute}="" role="gridcell" aria-label="${from==='stash'?'空倉庫格':'空背包格'}"></div>`;
  const svg=itemIcon(item),requirement=M.equipRequirement(c,item),ringChoice=item.slot==='ring'&&!requirement.ok&&requirement.reason.includes('請選擇');
  const batchMark=eligible?`<span class="inventory-batch-check" aria-hidden="true">${icon('check')}</span>`:'';
- return `<button type="button" class="inventory-cell ${item.uniqueID?'unique-cell ':''}${!requirement.ok&&!ringChoice&&from!=='equipped'?'level-restricted ':''}${from==='equipped'?'worn-cell':''} ${selected?'selected':''}" data-inventory-item="${esc(item.id)}" data-inventory-from="${from}" ${slot?`data-equip-slot="${slot}"`:`${dropAttribute}="${esc(item.id)}"`} draggable="${!batch&&(panel==='inventory'||panel==='stash')}" style="--item-color:${M.itemColor(item)}" aria-label="${esc(item.name)}，${itemFormText(item)}，${M.RARITIES[item.rarity].name}${from==='equipped'?'，已穿戴':''}" aria-pressed="${selected}">${icon(svg)}${armorClass(item)?`<small class="cell-armor-weight" title="${ARMOR_WEIGHTS[armorClass(item)].name}">${ARMOR_WEIGHTS[armorClass(item)].name[0]}</small>`:''}${item.uniqueID?'<i class="cell-unique" aria-label="獨特裝備">✺</i>':''}${!requirement.ok&&from==='bag'?'<small class="cell-requirement" title="'+esc(requirement.reason)+'">'+(c.level<(item.requiredLevel??1)?'Lv.'+item.requiredLevel:ringChoice?'選位':'衝突')+'</small>':''}${item.upgrade?`<b class="cell-upgrade">+${item.upgrade}</b>`:''}${item.set?'<i class="cell-set" aria-label="套裝">◆</i>':''}${item.grantedSkill?'<i class="cell-skill" aria-label="授予技能">✦</i>':''}${batchMark}<span class="cell-quality"></span></button>`;
+ return `<button type="button" class="inventory-cell ${item.uniqueID?'unique-cell ':''}${!requirement.ok&&!ringChoice&&from!=='equipped'?'level-restricted ':''}${from==='equipped'?'worn-cell':''} ${selected?'selected':''}" data-inventory-item="${esc(item.id)}" data-inventory-from="${from}" ${slot?`data-equip-slot="${slot}"`:`${dropAttribute}="${esc(item.id)}"`} draggable="${nativeInventoryDragEnabled(from)}" style="--item-color:${M.itemColor(item)}" aria-label="${esc(item.name)}，${itemFormText(item)}，${M.RARITIES[item.rarity].name}${from==='equipped'?'，已穿戴':''}" aria-pressed="${selected}">${icon(svg)}${armorClass(item)?`<small class="cell-armor-weight" title="${ARMOR_WEIGHTS[armorClass(item)].name}">${ARMOR_WEIGHTS[armorClass(item)].name[0]}</small>`:''}${item.uniqueID?'<i class="cell-unique" aria-label="獨特裝備">✺</i>':''}${!requirement.ok&&from==='bag'?'<small class="cell-requirement" title="'+esc(requirement.reason)+'">'+(c.level<(item.requiredLevel??1)?'Lv.'+item.requiredLevel:ringChoice?'選位':'衝突')+'</small>':''}${item.upgrade?`<b class="cell-upgrade">+${item.upgrade}</b>`:''}${item.set?'<i class="cell-set" aria-label="套裝">◆</i>':''}${item.grantedSkill?'<i class="cell-skill" aria-label="授予技能">✦</i>':''}${batchMark}<span class="cell-quality"></span></button>`;
 }
 function gearImplicitMarkup(item){
  const weight=ARMOR_WEIGHTS[armorClass(item)],weapon=M.WEAPON_TYPES[item.weaponType],lines=[],fmt=value=>(value>0?'+':'')+Math.round(value*1000)/10+'%';
@@ -1798,7 +1801,7 @@ function unifiedCell(entry,stashSlot=null){
  if(!entry)return inventoryCell(null,'bag');
  if(entry.kind==='equipment')return inventoryCell(entry.item,entry.from,null,stashSlot);
  return carriedItemCell(entry,{selected:inventorySelection?.id===entry.id&&inventorySelection?.from===entry.from,
-  draggable:panel==='inventory'||panel==='stash'&&entry.from!=='resource',stashSlot});
+  draggable:nativeInventoryDragEnabled(entry.from),stashSlot});
 }
 function storageCells(entries,used,capacity,from){
  const occupiedHidden='<div class="inventory-cell filtered-slot" data-filtered-slot aria-hidden="true"></div>';
@@ -2095,12 +2098,17 @@ function closeInventoryInspector(suppress=0,restoreFocus=false){
 function hideItemTooltip(){clearTimeout(itemTooltipTimer);}
 function showItemTooltip(cell){clearTimeout(itemTooltipTimer);if(!['inventory','stash'].includes(panel)||!fineInventoryPointer()||inventoryDiscardBatch||inventoryDrag||inventoryPanelPinned||Date.now()<inventoryHoverUntil)return;if(panel==='inventory'&&innerWidth<900&&['bag','equipped','flask-bag','flask-equipped'].includes(cell.dataset.inventoryFrom))return;const reveal=()=>{if(!cell.isConnected||inventoryDrag||inventoryPanelPinned||Date.now()<inventoryHoverUntil)return;const switching=inventorySelection&&(inventorySelection.id!==cell.dataset.inventoryItem||inventorySelection.from!==cell.dataset.inventoryFrom),settle=switching?260:120,idle=Date.now()-inventoryPointerMovedAt;if(idle<settle){itemTooltipTimer=setTimeout(reveal,settle-idle);return;}itemTooltipTimer=null;selectInventoryItem(cell.dataset.inventoryItem,cell.dataset.inventoryFrom,true);};itemTooltipTimer=setTimeout(reveal,160);}
 function suppressDragInspector(){inventoryClickUntil=Date.now()+500;inventoryHoverUntil=inventoryClickUntil;closeInventoryInspector();}
-function clearInventoryDrag(){inventoryDrag=null;dialog.classList.remove('inventory-dragging');dialog.querySelector('.inventory-drag-preview')?.remove();$$('.drop-compatible,.drop-hover,.drop-rejected,.drag-source,.drag-source-lifted').forEach(el=>el.classList.remove('drop-compatible','drop-hover','drop-rejected','drag-source','drag-source-lifted'));}
-function setInventoryDragPreview(event,cell){
- const transfer=event.dataTransfer;
- if(typeof transfer.setDragImage!=='function')return false;
+function clearInventoryDrag(){
+ const pointer=touchInventoryDown?.pointer,body=$('#dialog-body');
+ inventoryDrag=null;touchInventoryDown=null;lastInventoryTap=null;
+ if(pointer!==undefined&&body.hasPointerCapture(pointer))body.releasePointerCapture(pointer);
+ dialog.classList.remove('inventory-dragging');
+ dialog.querySelector('.inventory-drag-preview')?.remove();
+ $$('.drop-compatible,.drop-hover,.drop-rejected,.drag-source,.drag-source-lifted').forEach(el=>el.classList.remove('drop-compatible','drop-hover','drop-rejected','drag-source','drag-source-lifted'));
+}
+function createInventoryDragPreview(cell){
  const bounds=cell.getBoundingClientRect();
- if(!bounds.width||!bounds.height)return false;
+ if(!bounds.width||!bounds.height)return null;
  const preview=cell.cloneNode(true);
  for(const {name} of [...preview.attributes])if(name.startsWith('data-'))preview.removeAttribute(name);
  preview.classList.remove('selected','drag-source','drag-source-lifted','drop-hover','drop-rejected','drop-compatible','drop-complete');
@@ -2110,6 +2118,14 @@ function setInventoryDragPreview(event,cell){
  preview.setAttribute('aria-hidden','true');
  Object.assign(preview.style,{left:bounds.left+'px',top:bounds.top+'px',width:bounds.width+'px',height:bounds.height+'px'});
  cell.after(preview);
+ return {preview,bounds};
+}
+function setInventoryDragPreview(event,cell){
+ const transfer=event.dataTransfer;
+ if(typeof transfer.setDragImage!=='function')return false;
+ const clone=createInventoryDragPreview(cell);
+ if(!clone)return false;
+ const {preview,bounds}=clone;
  const offset=(point,start,size)=>Math.round(Math.max(0,Math.min(size,point-start)));
  // Snapshot the full cell before dimming the source; remove the temporary copy before paint.
  try{transfer.setDragImage(preview,offset(event.clientX,bounds.left,bounds.width),offset(event.clientY,bounds.top,bounds.height));}
@@ -2121,9 +2137,58 @@ function quickInventory(cell){if(inventoryDiscardBatch)return;if(cell.dataset.in
 // Keep the grid DOM intact on a single click, so a native double-click reaches the same cell.
 $('#dialog-body').addEventListener('dblclick',ev=>{const cell=ev.target.closest('[data-inventory-item]');if(panel==='inventory'&&cell&&Date.now()>inventoryClickUntil){ev.preventDefault();quickInventory(cell);}});
 $('#dialog-body').addEventListener('keydown',ev=>{const cell=ev.target.closest('[data-inventory-item]');if(cell&&panel==='inventory'&&!inventoryDiscardBatch&&ev.key==='Enter'&&!ev.repeat){ev.preventDefault();quickInventory(cell);}});
-$('#dialog-body').addEventListener('pointerdown',ev=>{if(ev.pointerType!=='touch')return;const cell=ev.target.closest('[data-inventory-item]');touchInventoryDown=cell?{id:cell.dataset.inventoryItem,from:cell.dataset.inventoryFrom,x:ev.clientX,y:ev.clientY}:null;});
-$('#dialog-body').addEventListener('pointercancel',()=>{touchInventoryDown=null;lastInventoryTap=null;});
-$('#dialog-body').addEventListener('pointerup',ev=>{if(ev.pointerType!=='touch'||panel!=='inventory'||inventoryDiscardBatch)return;const cell=ev.target.closest('[data-inventory-item]'),down=touchInventoryDown;touchInventoryDown=null;if(!cell||!down||down.id!==cell.dataset.inventoryItem||Math.hypot(ev.clientX-down.x,ev.clientY-down.y)>12){lastInventoryTap=null;return;}const now=Date.now();if(lastInventoryTap?.id===down.id&&lastInventoryTap.from===down.from&&now-lastInventoryTap.time<360){inventoryClickUntil=now+450;lastInventoryTap=null;quickInventory(cell);}else lastInventoryTap={...down,time:now};});
+$('#dialog-body').addEventListener('pointerdown',ev=>{
+ if(ev.pointerType!=='touch'||panel!=='inventory'||inventoryDiscardBatch||touchInventoryDown||storageTransactions)return;
+ const cell=ev.target.closest('[data-inventory-item]');
+ if(cell)touchInventoryDown={cell,pointer:ev.pointerId,id:cell.dataset.inventoryItem,from:cell.dataset.inventoryFrom,x:ev.clientX,y:ev.clientY};
+});
+$('#dialog-body').addEventListener('pointermove',ev=>{
+ const down=touchInventoryDown;
+ if(!down||down.pointer!==ev.pointerId||!document.body.classList.contains('mobile-phone'))return;
+ if(!inventoryDrag){
+  const dx=Math.abs(ev.clientX-down.x),dy=Math.abs(ev.clientY-down.y);
+  // Bag cells share a vertical scroller. A sideways drag lifts the item.
+  const farEnough=down.cell.closest('.backpack-scroll')?dx>=12&&dx>=dy:Math.hypot(dx,dy)>=12;
+  if(!farEnough||!down.cell.isConnected)return;
+  const clone=createInventoryDragPreview(down.cell);
+  if(!beginInventoryDrag(down.cell)){clone?.preview.remove();return;}
+  if(clone){
+   down.preview=clone.preview;
+   down.offsetX=down.x-clone.bounds.left;down.offsetY=down.y-clone.bounds.top;
+   down.cell.classList.add('drag-source-lifted');
+  }
+  ev.currentTarget.setPointerCapture(ev.pointerId);
+ }
+ if(down.preview){
+  down.preview.style.left=ev.clientX-down.offsetX+'px';
+  down.preview.style.top=ev.clientY-down.offsetY+'px';
+ }
+ highlightInventoryDrop(inventoryDropTarget(document.elementFromPoint(ev.clientX,ev.clientY)));
+});
+function cancelTouchInventory(ev){
+ if(touchInventoryDown?.pointer!==ev.pointerId)return;
+ if(inventoryDrag){suppressDragInspector();clearInventoryDrag();}
+ else touchInventoryDown=null;
+ lastInventoryTap=null;
+}
+$('#dialog-body').addEventListener('pointercancel',cancelTouchInventory);
+$('#dialog-body').addEventListener('lostpointercapture',ev=>{if(ev.target===ev.currentTarget)cancelTouchInventory(ev);});
+$('#dialog-body').addEventListener('pointerup',ev=>{
+ const down=touchInventoryDown;
+ if(!down||down.pointer!==ev.pointerId)return;
+ if(inventoryDrag){
+  const target=inventoryDropTarget(document.elementFromPoint(ev.clientX,ev.clientY));
+  void finishInventoryDrop(target);
+  return;
+ }
+ touchInventoryDown=null;
+ const cell=ev.target.closest('[data-inventory-item]');
+ if(panel!=='inventory'||!cell||cell!==down.cell||Math.hypot(ev.clientX-down.x,ev.clientY-down.y)>12){lastInventoryTap=null;return;}
+ const now=Date.now();
+ if(lastInventoryTap?.id===down.id&&lastInventoryTap.from===down.from&&now-lastInventoryTap.time<360){
+  inventoryClickUntil=now+450;lastInventoryTap=null;quickInventory(cell);
+ }else lastInventoryTap={id:down.id,from:down.from,time:now};
+});
 dialog.addEventListener('pointermove',ev=>{if(ev.pointerType!=='touch')inventoryPointerMovedAt=Date.now();});
 dialog.addEventListener('pointerover',ev=>{if(ev.pointerType==='touch')return;if(ev.target.closest('#inventory-selection')){clearTimeout(itemTooltipTimer);return;}const cell=ev.target.closest('[data-inventory-item]');if(cell&&!cell.contains(ev.relatedTarget))showItemTooltip(cell);});
 dialog.addEventListener('pointerout',ev=>{const cell=ev.target.closest('[data-inventory-item]'),sheet=ev.target.closest('#inventory-selection');if(cell&&!cell.contains(ev.relatedTarget)){clearTimeout(itemTooltipTimer);inventoryPanelPinned=false;}if(sheet&&!sheet.contains(ev.relatedTarget))inventoryPanelPinned=false;});
@@ -2150,6 +2215,7 @@ dialog.addEventListener('scroll',ev=>{if(!ev.target.closest?.('#inventory-select
 window.addEventListener('resize',positionInventoryInspector);
 dialog.addEventListener('close',()=>{if(!dialog.open){inventoryPanelPinned=false;inventoryDiscardBatch=null;gearDiscardPending=null;dialog.classList.remove('inventory-detail-focus');clearTimeout(itemTooltipTimer);}});
 function inventoryDropTarget(element){
+ if(!element)return null;
  if(element.closest('[data-filtered-slot]'))return null;
  if(panel==='inventory')return element.closest('[data-inventory-page],[data-flask-equip],[data-equip-slot],[data-bag-drop]');
  if(panel==='stash'&&!element.closest('.stash-supplies'))return element.closest('[data-stash-slot],[data-stash-page],[data-bag-drop]');
@@ -2171,18 +2237,13 @@ function stashDropPlacement(drag,target,item){
  if(bagged&&slots[slot]===null)return {action:'deposit',slot};
  return null;
 }
-$('#dialog-body').addEventListener('dragstart',ev=>{
- const cell=ev.target.closest('[data-inventory-item]');
- if(!cell||!ev.dataTransfer)return;
+function beginInventoryDrag(cell){
  const stash=panel==='stash';
  const from=cell.dataset.inventoryFrom,item=inventoryItem(cell.dataset.inventoryItem,from);
- if(!item||panel==='inventory'&&inventoryDiscardBatch||panel!=='inventory'&&!stash||stash&&e.mode!=='camp'||stash&&from==='resource'){ev.preventDefault();return;}
+ if(!item||panel==='inventory'&&inventoryDiscardBatch||panel!=='inventory'&&!stash||stash&&(e.mode!=='camp'||from==='resource'))return false;
  inventoryDrag={id:item.id,from,hero:c.id};
  lastInventoryTap=null;
  closeInventoryInspector();
- ev.dataTransfer.setData('application/x-emberfall-item',item.id);
- ev.dataTransfer.effectAllowed='move';
- cell.classList.toggle('drag-source-lifted',setInventoryDragPreview(ev,cell));
  cell.classList.add('drag-source');
  dialog.classList.add('inventory-dragging');
  if(panel==='inventory'&&movableBagSource(from))$$('[data-inventory-page]').forEach(tab=>{
@@ -2190,38 +2251,58 @@ $('#dialog-body').addEventListener('dragstart',ev=>{
  });
  if(panel==='inventory'&&Inventory.isFlask(item))$$('[data-flask-equip]').forEach(el=>el.classList.toggle('drop-compatible',e.mode==='camp'&&Number(el.dataset.flaskEquip)!==c.flaskItems.findIndex(f=>f?.id===item.id)));
  if(panel==='inventory'&&from==='bag')$$('[data-equip-slot]').forEach(el=>el.classList.toggle('drop-compatible',slotMatches(item,el.dataset.equipSlot)));
+ return true;
+}
+$('#dialog-body').addEventListener('dragstart',ev=>{
+ const cell=ev.target.closest('[data-inventory-item]');
+ if(!cell||!ev.dataTransfer)return;
+ if(!nativeInventoryDragEnabled(cell.dataset.inventoryFrom)||!beginInventoryDrag(cell)){ev.preventDefault();return;}
+ ev.dataTransfer.setData('application/x-emberfall-item',inventoryDrag.id);
+ ev.dataTransfer.effectAllowed='move';
+ cell.classList.toggle('drag-source-lifted',setInventoryDragPreview(ev,cell));
 });
+function validInventoryDrop(drag,target){
+ if(!drag||drag.hero!==c.id||!target)return false;
+ const item=inventoryItem(drag.id,drag.from);
+ if(!item)return false;
+ if(panel==='stash')return !!stashDropPlacement(drag,target,item);
+ if(target.hasAttribute('data-inventory-page')){
+  return movableBagSource(drag.from)&&Number(target.dataset.inventoryPage)!==InventoryPages.pageForItem(c,drag.id);
+ }
+ if(target.hasAttribute('data-flask-equip')){
+  return Inventory.isFlask(item)&&e.mode==='camp'&&Number(target.dataset.flaskEquip)!==c.flaskItems.findIndex(f=>f?.id===item.id);
+ }
+ if(Inventory.isFlask(item)){
+  const other=inventoryItem(target.dataset.bagDrop,'flask-bag');
+  return target.hasAttribute('data-bag-drop')&&(drag.from==='flask-bag'||e.mode==='camp'&&drag.from==='flask-equipped'&&!!other);
+ }
+ if(target.hasAttribute('data-equip-slot')){
+  const slot=target.dataset.equipSlot;
+  return drag.from==='bag'&&slotMatches(item,slot)&&M.equipRequirement(c,item,slot).ok;
+ }
+ return drag.from==='resource'||drag.from==='bag'||c.bag.length<Inventory.BAG_CAPACITIES.equipment;
+}
+function highlightInventoryDrop(target){
+ const previous=dialog.querySelector('.drop-hover,.drop-rejected');
+ const valid=validInventoryDrop(inventoryDrag,target);
+ if(previous!==target)previous?.classList.remove('drop-hover','drop-rejected');
+ target?.classList.toggle('drop-hover',valid);
+ target?.classList.toggle('drop-rejected',!valid);
+ return valid;
+}
 $('#dialog-body').addEventListener('dragover',ev=>{
- const drag=inventoryDrag;
- if(!drag||drag.hero!==c.id)return;
- const target=inventoryDropTarget(ev.target);
- $$('.drop-hover,.drop-rejected').forEach(el=>el.classList.remove('drop-hover','drop-rejected'));
+ if(!inventoryDrag)return;
+ const target=inventoryDropTarget(ev.target),valid=highlightInventoryDrop(target);
  if(!target)return;
  ev.preventDefault();
- const item=inventoryItem(drag.id,drag.from);
- let valid=false;
- if(item&&panel==='stash')valid=!!stashDropPlacement(drag,target,item);
- else if(item&&target.hasAttribute('data-inventory-page')){
-  valid=movableBagSource(drag.from)&&Number(target.dataset.inventoryPage)!==InventoryPages.pageForItem(c,drag.id);
- }else if(item&&target.hasAttribute('data-flask-equip')){
-  valid=Inventory.isFlask(item)&&e.mode==='camp'&&Number(target.dataset.flaskEquip)!==c.flaskItems.findIndex(f=>f?.id===item.id);
- }else if(item&&Inventory.isFlask(item)){
-  const other=inventoryItem(target.dataset.bagDrop,'flask-bag');
-  valid=target.hasAttribute('data-bag-drop')&&(drag.from==='flask-bag'||e.mode==='camp'&&drag.from==='flask-equipped'&&!!other);
- }else if(item&&target.hasAttribute('data-equip-slot')){
-  const slot=target.dataset.equipSlot;
-  valid=drag.from==='bag'&&slotMatches(item,slot)&&M.equipRequirement(c,item,slot).ok;
- }else if(item)valid=drag.from==='resource'||drag.from==='bag'||c.bag.length<150;
  ev.dataTransfer.dropEffect=valid?'move':'none';
- target.classList.add(valid?'drop-hover':'drop-rejected');
 });
 function flashInventoryDrop(selector){const target=dialog.querySelector(selector);if(target){target.classList.add('drop-complete');setTimeout(()=>target.classList.remove('drop-complete'),650);}}
-$('#dialog-body').addEventListener('drop',async ev=>{
- const drag=inventoryDrag,target=inventoryDropTarget(ev.target);
- if(!drag||drag.hero!==c.id||!target)return;
- ev.preventDefault();
+async function finishInventoryDrop(target){
+ const drag=inventoryDrag,valid=validInventoryDrop(drag,target);
  suppressDragInspector();
  clearInventoryDrag();
+ if(!valid)return;
  const movedItem=`[data-inventory-item="${CSS.escape(drag.id)}"]`;
  if(panel==='stash'){
   const placement=stashDropPlacement(drag,target,inventoryItem(drag.id,drag.from));
@@ -2249,6 +2330,11 @@ $('#dialog-body').addEventListener('drop',async ev=>{
   if(before!==drag.id)moved=await commitInventory((hero,profile)=>Inventory.reorder(profile,hero.id,drag.id,before),'',null);
  }
  if(moved)flashInventoryDrop(mark);
+}
+$('#dialog-body').addEventListener('drop',ev=>{
+ if(!inventoryDrag)return;
+ ev.preventDefault();
+ void finishInventoryDrop(inventoryDropTarget(ev.target));
 });
 $('#dialog-body').addEventListener('dragend',()=>{if(inventoryDrag){suppressDragInspector();clearInventoryDrag();}});
 function saveNamespaceNotice(){return '';}

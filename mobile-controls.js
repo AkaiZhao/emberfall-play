@@ -2,12 +2,15 @@
 // manual, dialog, storage and visibility pauses through onBlocked.
 export function installMobileControls({onBlocked=()=>{},clearInput=()=>{},window:win=globalThis.window,document:doc=globalThis.document}={}){
  const body=doc.body,guard=doc.querySelector('#orientation-guard'),joystick=doc.querySelector('#joystick');
+ const arena=doc.querySelector('#arena'),actionSelector='button[data-action],button[data-flask],#touch-attack';
  const coarse=win.matchMedia?.('(any-pointer: coarse)'),hover=win.matchMedia?.('(hover: hover)');
  const listeners=[],previousInert=new Map();let blocked=false,phone=false,pointer=null,previousFocus=null,destroyed=false;
+ const actionPointers=new Map(),touchButtons=new WeakSet();
  const listen=(target,type,handler,options)=>{if(!target?.addEventListener)return;target.addEventListener(type,handler,options);listeners.push(()=>target.removeEventListener(type,handler,options));};
  const stop=event=>{event.preventDefault();event.stopImmediatePropagation();};
  function clear(){
   const captured=pointer;pointer=null;
+  actionPointers.clear();
   if(captured!==null&&joystick?.hasPointerCapture?.(captured)){try{joystick.releasePointerCapture(captured);}catch{}}
   clearInput();
  }
@@ -48,6 +51,41 @@ export function installMobileControls({onBlocked=()=>{},clearInput=()=>{},window
  function releasePointer(event){if(event.pointerId===pointer)pointer=null;}
  function cancelPointer(event){if(event.pointerId===pointer)clear();}
  function blockEvent(event){if(blocked)stop(event);}
+ function beginAction(event){
+  if(!phone||blocked)return;
+  const button=event.target.closest?.(actionSelector);
+  if(!button)return;
+  if(event.pointerType!=='touch'){touchButtons.delete(button);return;}
+  if(button.disabled)return;
+  event.preventDefault();
+  touchButtons.add(button);
+  actionPointers.set(event.pointerId,button);
+  button.setPointerCapture(event.pointerId);
+ }
+ function endAction(event){
+  const button=actionPointers.get(event.pointerId);
+  actionPointers.delete(event.pointerId);
+  if(!phone||blocked||!button?.isConnected||button.disabled)return;
+  const released=doc.elementFromPoint(event.clientX,event.clientY)?.closest(actionSelector);
+  if(released===button)button.click();
+ }
+ function discardAction(event){actionPointers.delete(event.pointerId);}
+ function skipNativeTouchClick(event){
+  if(!phone||!event.isTrusted)return;
+  const button=event.target.closest?.(actionSelector);
+  if(!button)return;
+  // Native compatibility clicks vary by browser and may be omitted for a
+  // second finger. Touch activation is owned by that finger's pointerup.
+  if(event.pointerType==='touch'||event.sourceCapabilities?.firesTouchEvents||event.detail>0&&touchButtons.has(button)){
+   touchButtons.delete(button);
+   stop(event);
+  }
+ }
+ listen(arena,'pointerdown',beginAction,{passive:false});
+ listen(arena,'pointerup',endAction);
+ listen(arena,'pointercancel',discardAction);
+ listen(arena,'lostpointercapture',discardAction);
+ listen(arena,'click',skipNativeTouchClick,true);
  listen(win,'pointerdown',capturePointer,{capture:true,passive:false});
  listen(guard,'cancel',event=>{if(blocked)stop(event);});
  listen(win,'pointerup',releasePointer,true);
