@@ -148,7 +148,7 @@ function shellMarkup(tree,doc){
 }
 
 export function mountRingTree(container,{
- tree,hero,budget,stateFor,stage,invest,reset,inspectSkill,skillDetails,formatModifier,canReset,resetHint='',toolbarAnchor
+ tree,hero,budget,stateFor,stage,invest,reset,inspectSkill,skillDetails,formatModifier,canReset,resetHint='',toolbarAnchor,draftAnchor
 }){
  container.innerHTML = shellMarkup(tree,container.ownerDocument);
  const panel = container.firstElementChild;
@@ -560,10 +560,14 @@ export function mountRingTree(container,{
   zoomAt(view.scale*Math.exp(clamp(-delta,-180,180)*.003),x,y);
  },{passive:false});
 
- const eventRoot=toolbarAnchor?.closest('dialog')||panel;
+ const eventRoot=(toolbarAnchor||draftAnchor)?.closest('dialog')||panel;
  if(toolbarAnchor){
   toolbar.classList.add('ring-tree','ring-tree-toolbar-docked');
   toolbarAnchor.before(toolbar);
+ }
+ if(draftAnchor){
+  draftBar.classList.add('ring-tree','ring-tree-draft-docked');
+  draftAnchor.after(draftBar);
  }
  listen(eventRoot,'pointerdown',event=>{
   if(!event.target.closest('.ring-tree-find'))results.hidden = true;
@@ -667,6 +671,7 @@ export function mountRingTree(container,{
    listeners.abort();
    pointers.clear();
    toolbar.remove();
+   draftBar.remove();
    panel.remove();
   }
  };

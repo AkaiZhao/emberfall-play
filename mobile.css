@@ -7,13 +7,21 @@
 .inventory-page-header{display:contents}
 .difficulty-disclosure{display:none}
 .difficulty-description>small,.difficulty-disclosure>small{font-size:10px;line-height:1.5}
-#loot-notices{
+#game-notices{
  position:fixed;left:var(--hud-gap,20px);bottom:24px;z-index:8;display:grid;gap:2px;
- max-width:min(300px,45vw);font-size:12px;line-height:1.35;opacity:.86;
+ max-width:min(300px,45vw);font-size:12px;line-height:1.35;
  text-shadow:0 1px 2px #000,0 0 4px #000;pointer-events:none
 }
-#loot-notices>div{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-body:has(.arena.in-combat) #loot-notices{bottom:104px}
+#loot-notices,#action-notices{display:grid;gap:2px;opacity:.85}
+:is(#loot-notices,#action-notices)>div,#level-notice{display:flex;align-items:baseline;gap:5px;min-width:0;white-space:nowrap}
+:is(#loot-notices,#action-notices)>div>span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+#loot-notices>div>small{flex:none;font-size:.8em;opacity:.88}
+#loot-notices b,#level-notice>span{font-variant-numeric:tabular-nums}
+#action-notices{color:#f3d28d}
+#action-notices>div{white-space:normal}
+#level-notice{color:#f3d28d;opacity:.94}
+#level-notice>span{color:#f2e4c5}
+body:has(.arena.in-combat) #game-notices{bottom:104px}
 .orientation-guard strong{font-size:17px;font-weight:500;letter-spacing:1px}
 .orientation-guard p{font-size:13px;color:#a9b69b}
 body.mobile-portrait-blocked #panel-dialog{visibility:hidden;pointer-events:none}
@@ -101,6 +109,7 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
  body.mobile-phone .inventory-dialog.equipment-inspector-layout #dialog-body{display:block}
  body.mobile-phone .inventory-dialog.equipment-inspector-layout #dialog-body>section,body.mobile-phone .inventory-dialog.equipment-inspector-layout #dialog-body>.paperdoll-pane{margin-bottom:8px}
  body.mobile-phone #toasts{bottom:var(--phone-bottom);left:50%;right:auto;transform:translateX(-50%);max-width:calc(100% - 460px);pointer-events:none}
+ body.mobile-phone .result-overlay .result-details{scrollbar-width:thin}
 }
 
 @media(orientation:landscape){
@@ -113,11 +122,29 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
  body.mobile-phone #panel-dialog .d2-detail{position:static}
  body.mobile-phone .family-budget{gap:4px 12px;padding:6px 9px;font-size:11px}
  body.mobile-phone .family-card{padding:8px 10px}
- body.mobile-phone .result-overlay{justify-content:flex-start;padding:8px 15px 25px;overflow:auto}
- body.mobile-phone .result-overlay>svg{display:none}
- body.mobile-phone .result-overlay h2{font-size:17px;margin:3px 0}
- body.mobile-phone .result-overlay .result-stats{margin:5px 0;gap:20px}
- body.mobile-phone .death-summary{padding:7px 9px;margin:5px 0}
+ body.mobile-phone #result-overlay{
+  --result-top:calc(var(--phone-top) + var(--hud-menu-height) + 4px);
+  padding-right:var(--phone-right);padding-bottom:8px;padding-left:var(--phone-left)
+ }
+ body.mobile-phone .result-card{width:min(480px,100%);gap:6px;padding:8px}
+ body.mobile-phone .result-card h2{font-size:16px}
+ body.mobile-phone .result-card>header>svg{width:20px;height:20px}
+ body.mobile-phone .result-card-stats>div{padding:3px}
+ body.mobile-phone .result-card-stats dd{font-size:15px}
+ body.mobile-phone .death-summary{padding:5px 7px}
+ body.mobile-phone .result-card footer button{min-height:30px;padding:3px 8px;font-size:11px}
+}
+
+@media(orientation:landscape) and (max-height:380px){
+ body.mobile-phone .result-card>header>div{display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 8px}
+ body.mobile-phone .result-card h2{order:-1}
+ body.mobile-phone .result-card-stats>div{flex-direction:row-reverse;justify-content:center;align-items:baseline;gap:5px}
+}
+
+@media(orientation:landscape){
+ body.mobile-phone:has(.result-overlay:not(.hidden)) #toasts{
+  inset:var(--phone-top) auto auto var(--phone-left)!important;max-width:min(220px,40vw);transform:none
+ }
 }
 
 @media(orientation:landscape){
@@ -168,8 +195,10 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
 }
 
 @media(orientation:landscape){
- body.mobile-phone:has(.arena) #loot-notices{
-  left:var(--phone-left);bottom:calc(var(--phone-bottom) + 127px);max-width:min(220px,40vw);font-size:11px
+ body.mobile-phone #game-notices{
+  left:calc(var(--phone-left) + 128px);bottom:var(--phone-bottom);
+  max-width:min(208px,calc(100vw - var(--phone-left) - var(--phone-right) - 337px));
+  font-size:11px
  }
  body.mobile-phone #route-hud:not([hidden]){
   display:grid;grid-template-columns:auto auto;gap:0 7px;align-items:center;
@@ -227,12 +256,13 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
  body.mobile-phone #panel-dialog .ring-tree-toolbar-docked .ring-tree-find{grid-column:auto;width:100%}
  body.mobile-phone #panel-dialog .ring-tree-toolbar-docked :is(.ring-tree-controls,.ring-tree-points){gap:2px;font-size:10px}
  body.mobile-phone #panel-dialog .ring-tree-toolbar-docked :is(.ring-tree-controls button,.ring-tree-points button,input){
-  min-width:0;min-height:32px;padding:3px 5px;font-size:10px
+  min-width:0;min-height:28px;padding:2px 5px;font-size:10px
  }
  body.mobile-phone #panel-dialog .ring-tree-toolbar-docked .ring-tree-zoom{width:27px;font-size:9px}
  body.mobile-phone #panel-dialog .ring-tree-toolbar-docked .ring-tree-points b{font-size:13px}
  body.mobile-phone #panel-dialog.ring-tree-dialog #dialog-body{padding:4px 6px}
- body.mobile-phone #panel-dialog .ring-tree-viewport{height:clamp(128px,calc(100dvh - 96px),440px)}
+ body.mobile-phone #panel-dialog .ring-tree-viewport{height:clamp(116px,calc(100dvh - 130px),410px)}
+ body.mobile-phone #panel-dialog .ring-tree-detail-actions>button{min-height:30px;padding:3px 6px;font-size:11px}
  body.mobile-phone #panel-dialog .ring-tree-key{padding-block:2px}
  body.mobile-phone #panel-dialog .ring-tree-layout{gap:4px}
 
@@ -260,6 +290,9 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
  body.mobile-phone #panel-dialog.inventory-dialog #dialog-body:has(.inventory-view){
   overflow:hidden;padding:4px 6px 6px
  }
+ body.mobile-phone #panel-dialog.inventory-dialog .dialog-header{min-height:28px;padding-block:2px}
+ body.mobile-phone #panel-dialog.inventory-dialog #dialog-title{font-size:12px}
+ body.mobile-phone #panel-dialog.inventory-dialog #dialog-close{--modal-close-size:24px;background:none;border:0}
  body.mobile-phone #panel-dialog .inventory-view{height:100%;min-height:0}
  body.mobile-phone #panel-dialog .inventory-view .inventory-view-tabs{display:none}
  body.mobile-phone #panel-dialog .inventory-view .inventory-workbench{
@@ -279,10 +312,10 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
  body.mobile-phone #panel-dialog .inventory-view .inventory-page-header h3,
  body.mobile-phone #panel-dialog .inventory-view .pickup-filter>small{display:none}
  body.mobile-phone #panel-dialog .inventory-view .mini-hero-preview{
-  display:grid;height:42px;min-height:0;margin:2px 0;padding:0
+  display:grid;height:clamp(52px,20dvh,72px);min-height:0;margin:2px 0;padding:0
  }
  body.mobile-phone #panel-dialog .inventory-view .mini-hero-preview canvas{
-  height:40px;width:auto;min-height:0;max-width:100%;object-fit:contain
+  height:100%;width:auto;min-height:0;max-width:100%;object-fit:contain
  }
  body.mobile-phone #panel-dialog .inventory-view .inventory-pane-title{margin:0;padding:0;min-height:0}
  body.mobile-phone #panel-dialog .inventory-view .inventory-pane-title h3{margin:0;font-size:11px}
@@ -321,11 +354,15 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
  body.mobile-phone #panel-dialog .inventory-view .backpack-toolbar{gap:3px;margin:0;padding:2px;flex-wrap:nowrap}
  body.mobile-phone #panel-dialog .inventory-view .backpack-toolbar :is(select,input){min-height:27px;padding:2px 4px;font-size:11px}
  body.mobile-phone #panel-dialog .inventory-view .backpack-toolbar select{min-width:0;width:min(90px,31%)}
+ body.mobile-phone #panel-dialog .inventory-view .inventory-batch-actions>button{min-height:27px;padding:1px 4px;font-size:10px}
  body.mobile-phone #panel-dialog .inventory-view .backpack-scroll{
   flex:1 1 0;min-height:0;overflow:auto;overflow-anchor:none;overscroll-behavior:contain;touch-action:pan-y;scrollbar-width:thin
  }
  body.mobile-phone #panel-dialog .inventory-view .backpack-scroll:has(>.inventory-selection.has-selection){
   display:grid;grid-template-columns:minmax(0,1.35fr) minmax(88px,1fr);align-items:start;gap:4px
+ }
+ body.mobile-phone #panel-dialog .inventory-view .backpack-scroll:has(>.inventory-selection.is-gear-comparison.has-selection){
+  grid-template-columns:minmax(min(190px,55%),1fr) minmax(88px,1.15fr)
  }
  body.mobile-phone #panel-dialog .inventory-view .inventory-selection.has-selection{
   min-width:0;margin:var(--comparison-top,0) 0 0;padding:4px;overflow:visible;position:static
@@ -336,7 +373,7 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
  }
  body.mobile-phone #panel-dialog .inventory-view .backpack-grid .inventory-cell{height:auto;min-height:0;aspect-ratio:1}
  body.mobile-phone #panel-dialog .inventory-view .gear-inspector-tools{position:static;gap:2px;margin-bottom:3px;padding-bottom:2px}
- body.mobile-phone #panel-dialog .inventory-view :is(.gear-inspector-tools [data-gear-view],.ring-targets button,.potion-equip-targets button){
+ body.mobile-phone #panel-dialog .inventory-view :is(.gear-inspector-tools button,.ring-targets button,.potion-equip-targets button){
   min-height:28px;padding:2px 3px;font-size:10px
  }
  body.mobile-phone #panel-dialog .inventory-view :is(.inventory-selection-actions,.potion-detail-actions){gap:3px;margin-bottom:3px}
@@ -345,6 +382,13 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
  }
  body.mobile-phone #panel-dialog .inventory-view .gear-column{padding:3px}
  body.mobile-phone #panel-dialog .inventory-view .gear-column-title h3{font-size:11px}
+ body.mobile-phone #panel-dialog .inventory-view :is(.gear-column-caption,.gear-column-meta,.gear-white-values,.gear-group-label){font-size:10px}
  body.mobile-phone #panel-dialog .inventory-view .gear-roll{font-size:10px}
  body.mobile-phone #panel-dialog .inventory-view .gear-roll-value{font-size:10px}
+}
+
+@media(orientation:landscape) and (max-width:530px){
+ body.mobile-phone #game-notices{
+  left:var(--phone-left);bottom:calc(var(--phone-bottom) + 128px);max-width:44vw
+ }
 }

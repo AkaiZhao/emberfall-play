@@ -147,7 +147,7 @@
 }
 .ring-tree-viewport {
  position:relative;
- height:clamp(340px,65dvh,690px);
+ height:clamp(240px,58dvh,610px);
  overflow:clip;
  contain:paint;
  touch-action:none;
@@ -399,6 +399,16 @@
  padding:4px 8px;
  font-size:12px;
  letter-spacing:0;
+}
+#panel-dialog>.ring-tree-draft-docked[hidden] { display:none; }
+#panel-dialog>.ring-tree-draft-docked {
+ flex:0 0 auto;
+ padding:3px 8px;
+}
+#panel-dialog>.ring-tree-draft-docked .ring-tree-draft-actions>button {
+ min-height:30px;
+ padding:3px 7px;
+ font-size:11px;
 }
 .ring-tree-detail {
  min-width:0;

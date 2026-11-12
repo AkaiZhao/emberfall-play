@@ -49,11 +49,11 @@ export const CAMP_GUIDE={
 export function statusGuideMarkup(){
  const grid=entries=>`<ul class="guide-status-grid">${entries.map(entry=>`<li class="guide-status-card"><span class="guide-status-icon" aria-hidden="true" style="--status-color:${entry.color}">${actorStatusIconMarkup(entry)}</span><div><b>${entry.name}</b><p>${entry.detail}</p></div></li>`).join('')}</ul>`;
  const section=(id,label,entries)=>`<section class="guide-status-section" aria-labelledby="guide-status-${id}"><h3 id="guide-status-${id}">${label}</h3>${grid(entries)}</section>`;
- const {slow,bloodDebt,difficulty,summonWard,supportShield,proc,rage}=PLAYER_STATUSES;
+ const {slow,bloodDebt,difficulty,summonWard,supportShield,rage}=PLAYER_STATUSES;
  const {shield,aura,...enemy}=ACTOR_STATUSES;
  const speedAura=M.ABILITIES.w_haste;
  const beneficial=[
-  summonWard,supportShield,proc,rage,
+  summonWard,supportShield,rage,
   {name:'技能光環 · '+speedAura.name,icon:speedAura.icon,color:speedAura.color,detail:'提升移動、攻擊與施法速度。資源不足時會關閉技能光環，裝備光環則在穿戴時生效。'},
   {name:'召喚隊伍 · '+M.ABILITIES.m_wardlantern.name,icon:summonWard.icon,color:summonWard.color,detail:'數字為存活／配置數量，細條顯示隊伍的剩餘生命。'}
  ];

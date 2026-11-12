@@ -7,6 +7,22 @@ import {saveStashSlots,stashSlots,validStashSlot} from './stash-slots.js';
 export const CATEGORIES={all:'全部道具',equipment:'裝備',flask:'藥水',material:'製作材料',gem:'寶石',entry:'遠征道具'};
 export const BAG_CAPACITIES=Object.freeze({equipment:150,flask:36});
 export const STASH_PAGE_SIZE=40;
+export function discardBackpackGear(profile,heroId,ids,mode){
+ const hero=profile.characters?.[heroId],selected=new Set(ids);
+ if(mode!=='playing'||!hero||!selected.size)return false;
+ const remaining=hero.bag.filter(item=>!selected.has(item.id));
+ if(hero.bag.length-remaining.length!==selected.size)return false;
+ hero.bag=remaining;
+ if(hero.inventoryOrder)hero.inventoryOrder=hero.inventoryOrder.filter(id=>!selected.has(id));
+
+ const checkpoint=profile.rifts?.activeRun?.checkpoint?.hero;
+ if(checkpoint?.id===heroId){
+  checkpoint.bag=checkpoint.bag.filter(item=>!selected.has(item.id));
+  if(checkpoint.groundLoot)checkpoint.groundLoot=checkpoint.groundLoot.filter(item=>!selected.has(item.id));
+  if(checkpoint.inventoryOrder)checkpoint.inventoryOrder=checkpoint.inventoryOrder.filter(id=>!selected.has(id));
+ }
+ return true;
+}
 const currencyKinds=new Set(['gold','shard','mark']);
 const resourceColors={gold:'#d8b568',shard:'#b5a1db',material:'#bda0d2',mark:'#dfc184',fragment:'#9bced3',ticket:'#91d7c5',key:'#e8a579',emblem:'#dbb2ee',voucher:'#d2b771'};
 const gemColors={fire:'#e99e65',cold:'#8dd4e1',lightning:'#e3d281',poison:'#9acb7b',clarity:'#95bbdf',soul:'#bda3db',obsidian:'#b2b7bd',wind:'#a0d4c0',agility:'#ccb98b',casting:'#b3a6df'};

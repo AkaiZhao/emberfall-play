@@ -1,17 +1,16 @@
 import {CombatAudio,savedVolume,storeVolume,soundForSkill,soundForEffect} from './combat-audio.js?v=137';
+import {createGameNotices} from './game-notices.js?v=143';
 import {majorEnemyArea,majorEnemyCharge,majorEnemyIntent} from './enemy-warnings.js?v=108';
 import {createCloudClient} from './cloud-client.js?v=108';
-import {RELEASE_NOTES} from './release-notes.mjs?v=140';
+import {RELEASE_NOTES} from './release-notes.mjs?v=145';
 import {renderReleaseHistory} from './release-history.js?v=134';
-import {createCloudPanel} from './cloud-ui.js?v=108';
-import {createFeedbackPanel} from './feedback-ui.js?v=108';
 import {createVerifiedPanel} from './verified-ui.js?v=135';
 import {MANA_SIPHON_RATE,manaSiphonBudget} from './mana-economy.js?v=108';
 import {skillCatalog,skillConfigurationMarkup} from './compact-skills-ui.js?v=130';
 import {basicAttackMetrics} from './basic-attack-combat.js?v=129';
 import {skillWeaponRequirement,skillWeaponCompatible} from './skill-weapon-rules.js?v=129';
 import * as SkillAtlas from './skill-tree-layout.js?v=108';
-import {mountRingTree} from './ring-tree-ui.js?v=140';
+import {mountRingTree} from './ring-tree-ui.js?v=141';
 import {beastEffectRows} from './ranger-beasts.js?v=108';
 import {bloodEffectRows} from './berserker-blood-data.js?v=108';
 import {costText,sumCosts,scaleCost,availabilityView} from './resource-ui.js?v=108';
@@ -21,9 +20,9 @@ import {difficultySelector,chapterCards} from './campaign-selection.js?v=140';
 import {HORDE_RULES} from './horde-trial.js?v=108';
 import {riskEntries,riskChips,routeCostText} from './risk-presentation.js?v=108';
 import * as BasicAttacks from './basic-attacks.js?v=129';
-import * as InventoryPages from './inventory-pages.js?v=125';
+import * as InventoryPages from './inventory-pages.js?v=144';
 import {SceneInteraction,CursorMovement,sceneTargetAt,leftClickAction,manualSkillSlot,flaskKeySlot,navigationPanel,ACTIVE_SKILL_KEYS,ACTIVE_SKILL_LABELS,FLASK_KEYS,DODGE_KEY,DODGE_LABEL} from './scene-input.js?v=108';
-import {createSceneTransition} from './scene-transition.js?v=111';
+import {createSceneTransition} from './scene-transition.js?v=143';
 import {installMobileControls} from './mobile-controls.js?v=108';
 import {CombatInput} from './combat-input.js?v=108';
 import {decodeProfileBackup,encodeProfileBackup,openProfileStore} from './profile-storage.js?v=121';
@@ -31,7 +30,7 @@ import {clearCampaignCheckpoints,settleInterruptedPaidRun,takePaidRunLock} from 
 import {ARMOR_WEIGHTS,ARMOR_SHARES,armorClass,isShield} from './gear-archetypes.js?v=108';
 import {updateStatusHUD} from './status-hud.js?v=135';
 import {PICKUP_COLORS} from './pickup-filter.js?v=108';
-import {AFFIX_GROUPS,CAMP_GUIDE,affixDictionaryMarkup,setCatalogMarkup,statusGuideMarkup,uniqueCatalogMarkup} from './camp-guide.js?v=140';
+import {AFFIX_GROUPS,CAMP_GUIDE,affixDictionaryMarkup,setCatalogMarkup,statusGuideMarkup,uniqueCatalogMarkup} from './camp-guide.js?v=143';
 import {GROUND_STATUSES,PLAYER_STATUSES} from './status-effects.js?v=130';
 import {HERO_RESISTANCE_PENALTY,MAX_AILMENT_DURATION} from './elemental-rules.js?v=108';
 import {STARTING_WEAPONS,equipmentIcon,equipmentIconSymbols} from './equipment-visuals.js?v=124';
@@ -39,14 +38,14 @@ import {PASSIVE_LAYOUT,ROLE_BRANCHES,CONDITION_LABELS} from './passive-constella
 import * as Rifts from './rift-model.js?v=140';
 import {paidSaveCandidate,refreshPaidCheckpoint} from './rift-runtime.js?v=108';
 import * as M from './model.js?v=140';
-import {Game,abilityDamageTypes} from './engine.js?v=140';
+import {Game,abilityDamageTypes} from './engine.js?v=143';
 import {projectileBodyRadius} from './combat-geometry.js?v=108';
 import * as SkillText from './skill-presentation.js?v=130';
 import {Renderer} from './render.js?v=135';
 import {appearancePickerMarkup} from './appearance-picker.js?v=124';
 import {watchBplusImages} from './bplus-art.js?v=124';
 import {paintHeroPreview} from './character-model.js?v=130';
-import * as Inventory from './inventory-items.js?v=140';
+import * as Inventory from './inventory-items.js?v=144';
 import {itemCell as carriedItemCell,inventoryIconSymbols,currencyCountersMarkup,equipmentAffixesMarkup} from './inventory-presentation.js?v=135';
 import {flaskCardSummary,flaskComparisonRows,flaskStatValue} from './flask-workshop.js?v=108';
 import {animeUiSymbols} from './anime-ui-icons.js?v=124';
@@ -83,7 +82,7 @@ const SET_FIVE_DETAILS={
 const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const SKILL_DESCRIPTION_KEY='emberfall-skill-description-v1';
 let shortSkillDescriptions=true;try{shortSkillDescriptions=localStorage.getItem(SKILL_DESCRIPTION_KEY)!=='full';}catch{}
-let storageOK=true,storageReady=false,profileStore=null,state=M.newSave(),lastProc=null;
+let storageOK=true,storageReady=false,profileStore=null,state=M.newSave();
 let recoveryBackups=[];
 async function refreshRecoveryBackups(){
  try{recoveryBackups=await profileStore.listRecoveryBackups();}catch{recoveryBackups=[];}
@@ -91,7 +90,7 @@ async function refreshRecoveryBackups(){
 let storageTransactions=0,autoSaveTask=null,saveAgain=false;
 let combatInput=null,movementInput=null,sceneInput=null,mobileBlocked=false,pointerClient=null,stationaryCast=false;
 const SLOT_LABELS=ACTIVE_SKILL_LABELS;
-let c=state.characters[state.active]??M.newCharacter('warrior','尚未建立角色'),manualPause=false,pwaOverlayOpen=false,panel=null,skillTab=0,selectedSkillID=null,draftWeapon='sword',bagFilter='all',bagSearch='',bannerTimer=null,lastUI=0,lastFrame=performance.now(),joy={x:0,y:0},keys=new Set();
+let c=state.characters[state.active]??M.newCharacter('warrior','尚未建立角色'),manualPause=false,pwaOverlayOpen=false,panel=null,skillTab=0,selectedSkillID=null,draftWeapon='sword',bagFilter='all',bagSearch='',lastUI=0,lastFrame=performance.now(),joy={x:0,y:0},keys=new Set();
 let routePreviewID=null,selectedChapter=1,mapTab='campaign',paidLockRelease=null,paidLockOwned=false,paidBusy=false,repeatEligible=false,repeatRunId='',riftDraft={target:'physical',targetType:'set',challenge:1,guardian:1};
 let returningToCamp=false;
 const currentRoom=()=>e.currentRoom?.()||M.ROOMS[e.room]||M.ROOMS[0];
@@ -106,6 +105,7 @@ const flaskSaleIDs=new Set();
 let inventorySelection=null,inventoryDrag=null,lastInventoryTap=null,touchInventoryDown=null,inventoryClickUntil=0,itemTooltipTimer=null;
 let inventoryPanelPinned=false,inventoryHoverUntil=0,inventoryPointerMovedAt=0;
 let gearInspectorView='rolls',inventoryReturnScroll=0;
+let gearDiscardPending=null,inventoryDiscardBatch=null;
 let achievementScope='1',achievementFilter='unclaimed',progressionBadgeKey='',progressionBadgeRecord=null;
 let passiveQuery='',passiveFilter='all';
 let passiveSelection=null,passiveDrag=null,passiveView={hero:null,scale:.85,x:0,y:0};
@@ -187,31 +187,25 @@ e.setHordeTrial(true);
 const verifiedEntry=new URLSearchParams(location.search).get('realm')==='verified';
 const localQaOrigin=!verifiedEntry&&location.protocol==='http:'&&location.port==='8765'&&['127.0.0.1','localhost'].includes(location.hostname)?'http://127.0.0.1:8766':'';
 let pendingQaBackup=null;
-let verifiedPanel=null,feedbackPanel=null,cloudPanel=null;
+let verifiedPanel=null;
 let cloudIdentity=null;
-let cloudOpenOnReady=false;
 const cloud=createCloudClient({onChange(identity){
  if(identity===cloudIdentity)return;
  cloudIdentity=identity;
- cloudPanel?.refresh();
- feedbackPanel?.refresh();
  if(panel==='verified'&&dialog.open){leaveConnectedPanel();renderVerified();}
 }});
 cloudIdentity=cloud.account;
 function toast(text){const el=document.createElement('div');el.className='toast';el.textContent=text;$('#toasts').append(el);setTimeout(()=>el.remove(),3600);while($('#toasts').children.length>2)$('#toasts').firstElementChild.remove();}
-function showLoot(name,{rarity=0,count=1}={}){
- const list=$('#loot-notices'),entry=document.createElement('div');
- entry.style.color=(M.RARITIES[rarity]||M.RARITIES[0]).color;
- entry.textContent='＋ '+name+(count>1?' ×'+count:'');
- list.append(entry);
- setTimeout(()=>entry.remove(),4400);
- while(list.children.length>4)list.firstElementChild.remove();
+const gameNotices=createGameNotices($('#loot-notices'),$('#level-notice'),$('#action-notices'));
+function showLoot(name,{rarity=0,count=1,showRarity=false}={}){
+ const grade=M.RARITIES[rarity]||M.RARITIES[0];
+ gameNotices.pickup(name,{rarity,count,color:grade.color,rarityLabel:showRarity?grade.name.split('・')[0]:''});
 }
 let trainingDraft={scenario:'dummy',preset:'boss',armor:null,resistance:null,targets:1,duration:30,unlimitedMana:false},trainingHUDSummary=null;
 let pendingSave=null,lastSavedAt=0;
-let combatUIQueued=false,combatCharacterQueued=false,terminalCheckpointQueued=false,pendingProcFeed=null;
+let combatUIQueued=false,combatCharacterQueued=false,terminalCheckpointQueued=false;
 function queueCombatUI(character=false){combatUIQueued=true;combatCharacterQueued ||= character;}
-function flushCombatUI(){if(!combatUIQueued)return false;const character=combatCharacterQueued,proc=pendingProcFeed;pendingProcFeed=null;if(terminalCheckpointQueued){terminalCheckpointQueued=false;save(true);}if(proc&&e.mode==='playing')feed('裝備觸發：'+proc.name+(proc.count>1?' 等 '+proc.count+' 次':'')+' · 免費');combatUIQueued=false;combatCharacterQueued=false;if(character)updateCharacter(false);else updateHUD();return true;}
+function flushCombatUI(){if(!combatUIQueued)return false;const character=combatCharacterQueued;if(terminalCheckpointQueued){terminalCheckpointQueued=false;save(true);}combatUIQueued=false;combatCharacterQueued=false;if(character)updateCharacter(false);else updateHUD();return true;}
 async function save(force=false){
  if(!storageReady||e.mode==='camp'&&(paidBusy||state.rifts?.activeRun&&!paidLockOwned))return false;
  if(storageTransactions){saveAgain=true;return false;}
@@ -223,8 +217,7 @@ async function save(force=false){
     const candidate=state.rifts?.activeRun&&e.mode!=='camp'?paidSaveCandidate(state,e):structuredClone(state);
     clearCampaignCheckpoints(candidate);
    const discoveries=candidate.rifts?.activeRun?M.collectOwnedEquipment(candidate).gearCollection:null;
-   const saved=await profileStore.save(candidate);
-    if(e.mode==='camp'||e.cleared)cloudPanel?.offer(saved);
+   await profileStore.save(candidate);
    if(state===owner){
     state.writeRevision=candidate.writeRevision;
     if(candidate.rifts?.activeRun)state.rifts.activeRun=candidate.rifts.activeRun;
@@ -244,7 +237,7 @@ async function persistProfile(candidate,options={}){
  const owner=state,before=candidate.writeRevision||0;storageTransactions++;dialog.classList.add('storage-writing');updatePause();
  try{
   if(autoSaveTask){if(!await autoSaveTask)throw Error('先前進度尚未儲存。');if(state===owner&&(candidate.writeRevision||0)===before)candidate.writeRevision=state.writeRevision;}
-  const saved=await profileStore.save(candidate,options);if(!options.replace&&e.mode==='camp')cloudPanel?.offer(saved);storageOK=true;lastSavedAt=performance.now();$('#save-status').innerHTML='<i></i>進度已儲存於此裝置';return saved;
+  const saved=await profileStore.save(candidate,options);storageOK=true;lastSavedAt=performance.now();$('#save-status').innerHTML='<i></i>進度已儲存於此裝置';return saved;
  }finally{storageTransactions--;dialog.classList.remove('storage-writing');updatePause();if(saveAgain){saveAgain=false;setTimeout(()=>void save(true),0);}}
 }
 
@@ -254,16 +247,72 @@ setInterval(()=>{
  if(e.mode==='playing'&&!e.paused&&!e.training&&performance.now()-lastSavedAt>=5_000)save(true);
 },5_000);
 function feed(text){$('#feed-text').textContent=text;$('#feed-time').textContent=new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});}
-function event(type,data){if(type==='transition'||type==='transitionEnd'){updateTravelEvent(type);return;}if(!state.rifts?.activeRun&&type==='loot')M.recordEquipmentDiscovery(state,data);if(type==='auraConfigOff'){save(true);if(panel==='loadout')renderLoadout();queueCombatUI();return;}if(type==='objective'){updateMode();void save(true);return;}if(state.rifts?.activeRun&&['victory','dead'].includes(type)){finishPaid(type==='victory'?'won':'failed');return;}if(type==='room'&&!e.training)save(true);if(type==='victory'&&repeatEligible){Rifts.awardRepeatFragment(state,e.diff,repeatRunId);repeatEligible=false;showLoot('裂隙碎片');}if(type==='routeChoice'||type==='routeSelectionRequired'){openRoute();return;}if(type==='worldLoot'||type==='worldPickup'){if(type==='worldLoot'&&data.kind==='chest')feed('寶箱已開啟');save();queueCombatUI();return;}if(type==='room'||type==='start'||type==='camp'){stationaryCast=false;combatInput?.clear();movementInput?.clear();sceneInput?.clear();pointerClient=null;e.pointerTarget=null;routePreviewID=null;}if(['trainingStart','trainingReset','trainingEnd'].includes(type)){if(type!=='trainingEnd')$$('#toasts .toast').forEach(el=>el.remove());trainingHUDSummary=null;updateMode();updateHUD();feed(type==='trainingEnd'?'訓練完成 · 可查看傷害來源或重新測試':type==='trainingReset'?'訓練已重置 · 裝備與技能變更後重新採樣':'DPS 訓練場 · 首次命中開始計時 · 無掉落與進度');return;}if(type==='lootBlocked'){toast('背包已滿，高價裝備留在地面。請先整理背包。');return;}if(type==='wave'&&e.horde?.active){queueCombatUI();return;}if(type==='summonArmy'){feed('軍隊已更新 · '+data.count+' 名 · '+costText(data.resourceCost||e.summonResourceCost()));save(true);updateHUD();return;}if(type==='summonError'){toast(data?.reason||data?.message||e.skillError||'目前無法召喚軍隊。');return;}if(type==='aurasToggle'){feed(data?.active?'所選光環已開啟 · 持續支付'+(bloodResource()?'生命':'魔力'):'光環已整組關閉');save();updateHUD();return;}if(type==='shrine'){const name=data?.name||M.SHRINES?.[data?.type]?.name||'神壇';toast(name+' · '+(data?.instant?'恩賜已領取':'祝福持續 180 秒'));feed(name+' · '+(M.SHRINES?.[data?.type]?.description||'祝福已更新'));save(true);updateHUD();return;}if(type==='shrineExpired'){feed('神壇祝福已消退。');save(true);updateHUD();return;}if(type==='auraToggle'||type==='auraOff'){const name=M.ABILITIES[data?.id]?.name||'光環';if(type==='auraOff')toast(name+'已關閉 · '+(bloodResource()?'可用生命':'魔力')+'不足');else feed(name+(data?.active?'已開啟 · 持續支付'+(bloodResource()?'生命':'魔力'):'已關閉'));if(type==='auraOff')queueCombatUI();else updateHUD();return;}if(type==='elites'){const message='菁英現身：'+data.names.join('、')+' · '+data.traits.join('、');toast(message);feed(message);return;}if(type==='resourceLoot'){M.addResourceLoot(state,data);const lines=[...(data.materials||[]).map(r=>(M.MATERIALS[r.key]?.name||r.key)+' ×'+r.count),...(data.gems||[]).map(r=>gemName(r.key,r.tier)+' ×'+r.count)];if(lines.length){feed('共享資源：'+lines.join(' · '));for(const item of data.materials||[])showLoot(M.MATERIALS[item.key]?.name||item.key,{count:item.count});for(const item of data.gems||[])showLoot(gemName(item.key,item.tier),{count:item.count,rarity:item.tier});}save();queueCombatUI();return;}if(type==='bossMarks'){const reward=M.addBossMarks(state,data.difficulty);if(!reward)return;showLoot(M.DIFFICULTIES[reward.difficulty].name+'印記',{count:reward.amount});feed(`${M.DIFFICULTIES[reward.difficulty].name}印記 ＋${reward.amount} · 可向營地收藏家兌換`);save(true);return;}if(type==='flaskLoot'){const def=M.flaskForItem(data);feed('拾獲藥水裝備：'+def.name);showLoot(def.name,{rarity:data.rarity});save();queueCombatUI();return;}if(type==='trigger'){lastProc={name:data.name,until:performance.now()+1700};pendingProcFeed={name:data.name,count:(pendingProcFeed?.count||0)+1};queueCombatUI();return;}if(type==='reinforcements'){toast('王座援軍抵達！留意側翼。');return;}if(type==='noMana'){toast(e.skillError||(bloodResource()?'可用生命不足。':'魔力不足。'));return;}if(type==='flask'){updateHUD();return;}if(type==='loot'){feed(`拾獲 ${M.RARITIES[data.rarity].name}裝備：${data.name}`);showLoot(data.name,{rarity:data.rarity});}if(type==='level'){toast(`升至 Lv.${c.level}！獲得 ${data.points||data.levels||1} 點${data.unified||!data.points?'天賦':'技能'}點。`);feed(`新的力量甦醒。已達到 ${c.level} 級。`);}if(type==='bagfull')toast('背包已滿，普通裝備未收取。');if(type==='rage'){toast('灰燼君王已進入狂暴！閃避連續的地面衝擊。');feed('王座震顫，君王的怒火已然甦醒。');}if(type==='room'){showBanner();feed(`進入 ${currentRoom().name}。${(currentRoom().description||currentRoom().desc)} ${e.encounter.name}：${e.encounter.desc}`);}if(type==='clear'){const recovery=currentRoom().type==='recovery';toast(recovery?'整備完成！生命、魔力與藥水已補滿，兩種祭壇可選一。':'區域淨化！前往傳送門選擇下一條路線。');feed(recovery?'回復房 · 生命／魔力／藥水已補滿；兩種祝福選一，也可直接前進。':`${currentRoom().name} 已淨化，戰利品全部收取。`);}if(['start','camp','clear','room','wave','dead','victory'].includes(type)||type==='kill'&&e.objectives?.some(o=>!o.used)&&!e.enemies.length)updateMode();if(['loot','kill','level','victory','dead','clear'].includes(type)){if(['dead','victory'].includes(type))terminalCheckpointQueued=true;else save(type==='clear');queueCombatUI(true);}if(['dead','victory'].includes(type))showResult();}
-function hideBanner(){clearTimeout(bannerTimer);$('#room-banner').classList.add('hidden');}
-function showBanner(){
- if(e.training||e.transition)return;
- clearTimeout(bannerTimer);
- const room=currentRoom();
- $('#room-subtitle').textContent=room.sub;
- $('#room-title').textContent=room.name;
- $('#room-banner').classList.remove('hidden');
- bannerTimer=setTimeout(hideBanner,1500);
+function event(type,data){
+ if(type==='transition'||type==='transitionEnd'){updateTravelEvent(type);return;}
+ if(!state.rifts?.activeRun&&type==='loot')M.recordEquipmentDiscovery(state,data);
+ if(type==='auraConfigOff'){save(true);if(panel==='loadout')renderLoadout();queueCombatUI();return;}
+ if(type==='objective'){updateMode();void save(true);return;}
+ if(state.rifts?.activeRun&&['victory','dead'].includes(type)){finishPaid(type==='victory'?'won':'failed');return;}
+ if(type==='room'&&!e.training)save(true);
+ if(type==='victory'&&repeatEligible){Rifts.awardRepeatFragment(state,e.diff,repeatRunId);repeatEligible=false;showLoot('裂隙碎片');}
+ if(type==='routeChoice'||type==='routeSelectionRequired'){openRoute();return;}
+ if(type==='worldLoot'||type==='worldPickup'){save();queueCombatUI();return;}
+ if(type==='room'||type==='start'||type==='camp'){
+  stationaryCast=false;combatInput?.clear();movementInput?.clear();sceneInput?.clear();pointerClient=null;e.pointerTarget=null;routePreviewID=null;
+ }
+ if(['trainingStart','trainingReset','trainingEnd'].includes(type)){
+  if(type!=='trainingEnd')$('#toasts .toast').forEach(el=>el.remove());
+  trainingHUDSummary=null;updateMode();updateHUD();
+  feed(type==='trainingEnd'?'訓練完成 · 可查看傷害來源或重新測試':type==='trainingReset'?'訓練已重置 · 裝備與技能變更後重新採樣':'DPS 訓練場 · 首次命中開始計時 · 無掉落與進度');
+  return;
+ }
+ if(type==='bagfull'){gameNotices.notice('裝備背包已滿，物品留在地上');return;}
+ if(type==='wave'&&e.horde?.active){queueCombatUI();return;}
+ if(type==='summonArmy'||type==='shrineExpired'){save(true);updateHUD();return;}
+ if(type==='summonError'){gameNotices.notice(data?.reason||data?.message||e.skillError||'目前無法召喚軍隊。');return;}
+ if(type==='aurasToggle'){feed(data?.active?'所選光環已開啟 · 持續支付'+(bloodResource()?'生命':'魔力'):'光環已整組關閉');save();updateHUD();return;}
+ if(type==='shrine'){
+  const name=data?.name||M.SHRINES?.[data?.type]?.name||'神壇';
+  gameNotices.notice(name+' · '+(data?.instant?'恩賜已領取':'祝福持續 180 秒'));
+  save(true);updateHUD();return;
+ }
+ if(type==='auraToggle'||type==='auraOff'){
+  const name=M.ABILITIES[data?.id]?.name||'光環';
+  if(type==='auraOff'){
+   gameNotices.notice(name+'已關閉 · '+(bloodResource()?'可用生命':'魔力')+'不足');
+   queueCombatUI();
+  }else{
+   feed(name+(data?.active?'已開啟 · 持續支付'+(bloodResource()?'生命':'魔力'):'已關閉'));
+   updateHUD();
+  }
+  return;
+ }
+ if(type==='resourceLoot'){
+  M.addResourceLoot(state,data);
+  for(const item of data.materials||[])showLoot(M.MATERIALS[item.key]?.name||item.key,{count:item.count});
+  for(const item of data.gems||[])showLoot(gemName(item.key,item.tier),{count:item.count,rarity:item.tier});
+  save();queueCombatUI();return;
+ }
+ if(type==='bossMarks'){
+  const reward=M.addBossMarks(state,data.difficulty);if(!reward)return;
+  showLoot(M.DIFFICULTIES[reward.difficulty].name+'印記',{count:reward.amount});
+  save(true);return;
+ }
+ if(type==='flaskLoot'){
+  showLoot(M.flaskForItem(data).name,{rarity:data.rarity,showRarity:true});save();queueCombatUI();return;
+ }
+ if(type==='trigger'){queueCombatUI();return;}
+ if(type==='noMana'){gameNotices.notice(e.skillError||(bloodResource()?'可用生命不足。':'魔力不足。'));return;}
+ if(type==='flask'){updateHUD();return;}
+ if(type==='loot')showLoot(data.name,{rarity:data.rarity,showRarity:true});
+ if(type==='level')gameNotices.levelUp(c.level,data.points??data.levels??1,data.unified?'天賦點':'技能點');
+ if(['start','camp','clear','room','wave','dead','victory'].includes(type)||type==='kill'&&e.objectives?.some(o=>!o.used)&&!e.enemies.length)updateMode();
+ if(['loot','kill','level','victory','dead','clear'].includes(type)){
+  if(['dead','victory'].includes(type))terminalCheckpointQueued=true;
+  else save(type==='clear');
+  queueCombatUI(true);
+ }
+ if(['dead','victory'].includes(type))showResult();
 }
 function updateArenaLocation(){
  const chapter=e.chapter||1,route=e.runContext;
@@ -308,15 +357,20 @@ function interactCamp(){
 }
 function updateMode(){
  const next=nextCampaignChapter(),combat=e.mode==='playing',practice=!!e.training,room=currentRoom();
- $('#arena').classList.toggle('in-training',practice);
+ const arena=$('#arena'),finished=e.mode==='dead'||e.mode==='victory';
+ arena.classList.toggle('in-training',practice);
+ arena.classList.toggle('in-camp',e.mode==='camp'&&!!state.active);
+ arena.classList.toggle('in-combat',combat);
+ arena.closest('.game-shell').classList.toggle('showing-result',finished);
+ $('#result-overlay').classList.toggle('hidden',!finished);
+ $('#camp-overlay').classList.toggle('hidden',e.mode!=='camp'||!!state.active);
  $('#training-overlay').classList.toggle('hidden',!practice);
- if(practice||!combat)hideBanner();
  if(practice||e.mode!==sceneMode){
   if(!practice&&state.active&&(combat||e.mode==='camp'))sceneTransition.reveal(e);
   else sceneTransition.clear();
  }
  sceneMode=e.mode;
- $('#camp-overlay').classList.toggle('hidden',e.mode!=='camp'||!!state.active);$('#arena').classList.toggle('in-camp',e.mode==='camp'&&!!state.active);$('#result-overlay').classList.toggle('hidden',!['dead','victory'].includes(e.mode));$('#arena').classList.toggle('in-combat',combat);$('#arena-state').textContent=practice?'DPS 訓練場':e.mode==='camp'?'營地準備':e.mode==='dead'?'遠征結束':e.mode==='victory'?'關卡完成':e.cleared?(room.type==='recovery'?'整備完成':'區域淨化'):`第 ${e.wave} / ${room.waves} 波`;
+ $('#arena-state').textContent=practice?'DPS 訓練場':e.mode==='camp'?'營地準備':e.mode==='dead'?'遠征結束':e.mode==='victory'?'關卡完成':e.cleared?(room.type==='recovery'?'整備完成':'區域淨化'):`第 ${e.wave} / ${room.waves} 波`;
  updateArenaLocation();$('#objective-text').textContent=practice?'測試目前 BUILD · 無掉落與進度':e.mode==='camp'?(state.active&&c.level===1&&c.kills===0?'T 開啟燼脈圖學第一招 · 點擊遠征傳送門出發':'點擊地標前往互動 · E 與附近目標互動'):e.mode==='victory'?(next?'下一章已解鎖 · '+next.name:'章節已完成 · 整備後再次遠征'):e.mode==='dead'?'成長與裝備已保留，整備後再次挑戰。':e.cleared?(room.type==='recovery'?'整備完成 · 兩種祭壇選一，或選擇下一條路線':'區域已淨化 · 選擇下一條路線'):e.objectives?.some(o=>!o.used)?(e.enemies.length?'清除敵人並開啟水門 · ':'開啟水門 · ')+e.objectives.filter(o=>o.used).length+'/'+e.objectives.length:room.type==='recovery'?'生命、魔力與藥水已補滿 · 靠近祭壇按 E，兩種祝福選一':room.type==='boss'?'擊敗 '+(e.enemies.find(n=>n.type==='boss')?.name||room.name)+' · 留意地面預警':room.type==='miniboss'?'擊敗 '+room.name+' · 避開地面預警':`清除敵人 · ${(room.description||room.desc)}`;
  $('#mini-map').innerHTML=(e.expedition?.graph?.layers||M.chapterDefinition(selectedChapter).rooms).map((r,i)=>{const pathNode=e.expedition?.graph?.nodes?.find(n=>(e.expedition.path||[]).includes(n.id)&&n.layer===i);return `<span class="${i===e.room?'active':i<e.room?'done':''}" title="第${i+1}層 · ${esc(pathNode?.name||r.name)}"></span>`;}).join('');
  updateRunProgress();updatePause();}
@@ -329,27 +383,30 @@ function nextCampaignChapter(){
 }
 function deathSummaryMarkup(){
  const summary=e.deathSummary;if(!summary)return '';const type=SkillText.DAMAGE_LABELS[summary.type]||summary.type||'傷害',num=value=>Math.round(Number(value)||0).toLocaleString('zh-TW'),kinds={damage:'敵方傷害',enemy:'敵方傷害',lifePaid:'技能血費',lifeCost:'技能血費',cost:'技能血費',deferred:'延遲承傷',heal:'回復',healed:'回復'};
- return `<section class="death-summary" aria-label="死亡前傷害摘要"><div><b>${esc(summary.source||'未知來源')}</b><span>${esc(type)}${summary.resistance===undefined?'':' · 有效抗性 '+percent(summary.resistance)}</span></div><dl><div><dt>近 ${summary.window||6} 秒敵傷</dt><dd>${num(summary.enemyDamage)}</dd></div><div><dt>技能血費</dt><dd>${num(summary.lifePaid)}</dd></div><div><dt>延遲承傷</dt><dd>${num(summary.deferred)}</dd></div><div><dt>回復</dt><dd>${num(summary.healed)}</dd></div></dl>${summary.events?.length?`<details><summary>生命變化紀錄 · ${summary.events.length} 筆</summary><table><thead><tr><th>來源</th><th>類型</th><th>數量</th><th>生命</th></tr></thead><tbody>${summary.events.map(event=>`<tr><td>${esc(event.source||kinds[event.kind]||event.kind)}</td><td>${esc(kinds[event.kind]||event.kind)}${event.type?' · '+esc(SkillText.DAMAGE_LABELS[event.type]||event.type):''}</td><td>${num(event.amount)}</td><td>${num(event.hpBefore)} → ${num(event.hpAfter)}</td></tr>`).join('')}</tbody></table></details>`:''}</section>`;
+ const sourceLabel=source=>({burst:'爆發傷害',field:'持續範圍傷害',projectile:'投射物',contact:'接觸傷害',slam:'重擊'})[source]||source;
+ return `<section class="death-summary" aria-label="死亡前傷害摘要"><div><b>${esc(sourceLabel(summary.source)||'未知來源')}</b><span>${esc(type)}${summary.resistance===undefined?'':' · 有效抗性 '+percent(summary.resistance)}</span></div><dl><div><dt>近 ${summary.window||6} 秒敵傷</dt><dd>${num(summary.enemyDamage)}</dd></div><div><dt>技能血費</dt><dd>${num(summary.lifePaid)}</dd></div><div><dt>延遲承傷</dt><dd>${num(summary.deferred)}</dd></div><div><dt>回復</dt><dd>${num(summary.healed)}</dd></div></dl>${summary.events?.length?`<details><summary>生命變化紀錄 · ${summary.events.length} 筆</summary><table><thead><tr><th>來源</th><th>類型</th><th>數量</th><th>生命</th></tr></thead><tbody>${summary.events.map(event=>`<tr><td>${esc(sourceLabel(event.source)||kinds[event.kind]||event.kind)}</td><td>${esc(kinds[event.kind]||event.kind)}${event.type?' · '+esc(SkillText.DAMAGE_LABELS[event.type]||event.type):''}</td><td>${num(event.amount)}</td><td>${num(event.hpBefore)} → ${num(event.hpAfter)}</td></tr>`).join('')}</tbody></table></details>`:''}</section>`;
 }
 function showResult(){
  const win=e.mode==='victory',pending=win&&!!state.rifts?.activeRun,next=nextCampaignChapter();
  let actions='<button class="gold-btn" data-result="retry">'+icon('sword')+'再次遠征</button>';
  if(pending){
-  actions='<button class="gold-btn" data-result="settle">領取遠征獎勵</button><button class="subtle-btn" data-panel="inventory">整理背包</button>';
+  actions='<button class="gold-btn" data-result="settle">領取遠征獎勵</button><button class="outline-btn" data-panel="inventory">整理背包</button>';
  }else if(next){
   actions=`<button class="gold-btn" data-result="next-chapter">前往下一章 · ${esc(next.name)} ${icon('chevron')}</button>`;
  }
- const message=next?'下一章已解鎖，可直接出發。':win?'關卡已完成。帶上戰利品，整備下一次挑戰。':'你獲得的裝備、經驗與技能點皆已保留。';
+ const context=[M.DIFFICULTIES[e.diff]?.name,$('#arena-chapter-name').textContent].filter(Boolean).join(' · ');
+ const details=win?(pending?'':'<p class="result-reward">印記已收入帳號，可向營地收藏家兌換返脈石。</p>'):deathSummaryMarkup();
  $('#result-overlay').innerHTML=`
-  ${icon(win?'rune':'shield')}<h2>${win?'遠征完成':'遠征結束'}</h2><p>${message}</p>
-  <div class="result-stats">
-   <div><b>${e.runKills}</b><small>擊殺敵人</small></div>
-   <div><b>${e.runLoot}</b><small>取得裝備</small></div>
-   <div><b>${formatTime(e.elapsed)}</b><small>遠征時間</small></div>
-  </div>
-  ${win?'':deathSummaryMarkup()}
-  ${win?'<p class="result-reward">◇ 印記已收入帳號，可向營地收藏家兌換返脈石</p>':''}
-  ${actions}<button class="subtle-btn" data-result="camp">返回營地，整理裝備</button>`;
+  <section class="result-card" aria-labelledby="result-title">
+   <header>${icon(win?'rune':'shield')}<div><small>${esc(context)}</small><h2 id="result-title">${win?'遠征完成':'遠征結束'}</h2></div></header>
+   <dl class="result-card-stats">
+    <div><dt>擊殺敵人</dt><dd>${e.runKills}</dd></div>
+    <div><dt>取得裝備</dt><dd>${e.runLoot}</dd></div>
+    <div><dt>遠征時間</dt><dd>${formatTime(e.elapsed)}</dd></div>
+   </dl>
+   ${details?`<div class="result-details"${win?'':' role="region" tabindex="0" aria-label="傷害摘要與生命紀錄"'}>${details}</div>`:''}
+   <footer><button class="outline-btn" data-result="camp">返回營地</button>${actions}</footer>
+  </section>`;
 }
 async function returnToCamp(){
  if(returningToCamp)return false;
@@ -362,14 +419,11 @@ async function returnToCamp(){
    return await finishPaid(outcome,{camp:true});
   }
   if(e.mode==='playing'&&!e.training){
-   if(e.drops.length&&!e.collectAll()&&e.drops.some(drop=>!c.groundLoot?.some(item=>item.id===drop.item.id))){
-    manualPause=true;updatePause();toast('請先整理背包。地面高價裝備已保留。');void save(true);return false;
-   }
-   const wasPaused=manualPause;manualPause=true;updatePause();e.worldObjects.collectAll();
+   const wasPaused=manualPause;manualPause=true;updatePause();e.collectAll();
    if(!await save(true)){manualPause=wasPaused;updatePause();return false;}
   }
   e.runContext=null;
-  if(e.camp()===false){manualPause=true;updatePause();toast('請先整理背包。地面高價裝備已保留。');void save(true);return false;}
+  e.camp();
   manualPause=false;repeatEligible=false;repeatRunId='';updatePause();
   return true;
  }finally{returningToCamp=false;}
@@ -383,10 +437,7 @@ function start(chapter=selectedChapter){
  keys.clear();
  joy={x:0,y:0};
  if(e.start(c.difficulty,null,{chapter})===false){
-  manualPause=true;
   updatePause();
-  toast('請先騰出背包空間，收取地面戰利品。');
-  updateHUD();
   return false;
  }
  selectedChapter=chapter;
@@ -453,15 +504,15 @@ async function commitCharacterDeletion(form){
  toast('已刪除 '+deletedName+'。');
 }
 
-function openPanel(name){if(catalogDialog.open)catalogDialog.close();if(!storageReady&&name!=='verified')return;if(name==='summons'||name==='auras')name='loadout';if(name==='appearance')name='inventory';if(M.isRingHero(c)&&name==='passives')name='talents';if(name!=='talents')disposeSkillAtlas();if(name==='difficulty'){name='quests';mapTab='campaign';}if(CAMP_SERVICES.has(name)&&e.mode!=='camp'&&!(name==='training'&&e.training)){toast('請返回營地使用此服務。');return;}if(state.rifts?.activeRun&&(e.mode!=='playing'||!e.cleared)&&!(canManagePaidRewards()&&['inventory','stash','forge','merchant'].includes(name))&&!['quests','guide','stats','settings','cloud','feedback','verified'].includes(name)){toast('裂隙清房後才能整備。');return;}if(name==='trainingResults'&&!e.training)name='training';if(name==='training')trainingDraft=trainingSettings(e.training?.options||trainingDraft);if(name==='expedition'){closePanel();return;}if(['sets','inventory','talents','loadout','summons','auras','difficulty','stash','flasks','quests','training','trainingResults','achievements','passives','stats','forge','merchant','appearance'].includes(name)&&!state.active){toast('請先建立一位角色。');name='characters';}hideItemTooltip();clearInventoryDrag();passiveDrag=null;lastInventoryTap=null;if(panel!==name){leaveConnectedPanel();inventorySelection=null;talentSheetOpen=false;if(name==='inventory')inventoryTab='bag';if(name==='merchant')includeValuable=false;}if(name==='passives'&&panel!==name)passiveFocusRequested=true;if(name==='achievements'&&panel!==name){achievementScope=String(c.difficulty);achievementFilter='unclaimed';}panel=name;if(name!=='talents'||!M.isRingHero(c))disposeRingPanel();dialog.classList.toggle('ring-tree-dialog',name==='talents'&&M.isRingHero(c));dialog.classList.toggle('achievements-dialog',name==='achievements');dialog.classList.toggle('passive-dialog',name==='passives');dialog.classList.toggle('route-dialog',name==='quests');dialog.classList.toggle('sets-dialog',name==='sets');dialog.classList.toggle('settings-dialog',['settings','cloud','feedback'].includes(name));dialog.classList.toggle('verified-dialog',name==='verified');dialog.classList.toggle('training-dialog',['training','trainingResults'].includes(name));dialog.classList.toggle('skill-dialog',name==='talents');dialog.classList.toggle('skill-atlas-dialog',name==='talents');dialog.classList.toggle('loadout-dialog',['loadout','summons','auras'].includes(name));dialog.classList.toggle('inventory-dialog',name==='inventory');dialog.classList.toggle('flasks-dialog',name==='flasks');dialog.classList.toggle('stash-dialog',name==='stash');dialog.classList.toggle('camp-service-dialog',['forge','merchant','guide'].includes(name));dialog.classList.toggle('forge-dialog',name==='forge');dialog.scrollTop=0;keys.clear();joy={x:0,y:0};$('#stick').style.transform='';let title={achievements:['ACHIEVEMENTS','成就'],passives:['PASSIVE TREE','天賦'],stats:['','角色統計'],forge:['','鐵匠'],merchant:['','商人'],sets:['','印記收藏家'],settings:['','遊戲設定'],cloud:['','雲端存檔'],feedback:['','回報問題'],verified:['','公測遠征'],training:['MEASURE YOUR BUILD','DPS 訓練場'],trainingResults:['DAMAGE BREAKDOWN','訓練傷害分析'],inventory:['','裝備'],talents:['SHAPE YOUR BUILD','技能加點'],loadout:['','技能'],summons:['YOUR PERMANENT ARMY','召喚編隊'],auras:['SUSTAIN YOUR AURAS','光環配置'],characters:['YOUR HEROES','角色與存檔'],guide:['ADVENTURER’S CODEX','冒險指南'],difficulty:['THE GREATER THE RISK','遠征難度'],quests:['QUEST LOG','遠征路線'],stash:['SHARED ACROSS YOUR HEROES','共用倉庫'],flasks:['PREPARE YOUR FLASK BELT','充能藥水腰帶']}[name];if(!title)return;$('#dialog-eyebrow').textContent=title[0];$('#dialog-title').textContent=title[1];renderPanel();if(!dialog.open)dialog.showModal();$('#dialog-body').scrollTop=0;positionInventoryInspector();if(name==='quests')requestAnimationFrame(focusRouteProgress);updatePause();}
-function closePanel(){if(catalogDialog.open)catalogDialog.close();leaveConnectedPanel();disposeSkillAtlas();disposeRingPanel();hideItemTooltip();clearInventoryDrag();passiveDrag=null;dialog.close();panel=null;updatePause();}
+function openPanel(name){if(catalogDialog.open)catalogDialog.close();if(!storageReady&&name!=='verified')return;if(name==='summons'||name==='auras')name='loadout';if(name==='appearance')name='inventory';if(M.isRingHero(c)&&name==='passives')name='talents';if(name!=='talents')disposeSkillAtlas();if(name==='difficulty'){name='quests';mapTab='campaign';}if(CAMP_SERVICES.has(name)&&e.mode!=='camp'&&!(name==='training'&&e.training)){toast('請返回營地使用此服務。');return;}if(state.rifts?.activeRun&&(e.mode!=='playing'||!e.cleared)&&!(canManagePaidRewards()&&['inventory','stash','forge','merchant'].includes(name))&&!['quests','guide','stats','settings','verified'].includes(name)){toast('裂隙清房後才能整備。');return;}if(name==='trainingResults'&&!e.training)name='training';if(name==='training')trainingDraft=trainingSettings(e.training?.options||trainingDraft);if(name==='expedition'){closePanel();return;}if(['sets','inventory','talents','loadout','summons','auras','difficulty','stash','flasks','quests','training','trainingResults','achievements','passives','stats','forge','merchant','appearance'].includes(name)&&!state.active){toast('請先建立一位角色。');name='characters';}hideItemTooltip();clearInventoryDrag();passiveDrag=null;lastInventoryTap=null;if(panel!==name){leaveConnectedPanel();inventorySelection=null;talentSheetOpen=false;if(name==='inventory')inventoryTab='bag';if(name==='merchant')includeValuable=false;}if(name==='passives'&&panel!==name)passiveFocusRequested=true;if(name==='achievements'&&panel!==name){achievementScope=String(c.difficulty);achievementFilter='unclaimed';}if(name!=='inventory')inventoryDiscardBatch=null;panel=name;if(name!=='talents'||!M.isRingHero(c))disposeRingPanel();dialog.classList.toggle('ring-tree-dialog',name==='talents'&&M.isRingHero(c));dialog.classList.toggle('achievements-dialog',name==='achievements');dialog.classList.toggle('passive-dialog',name==='passives');dialog.classList.toggle('route-dialog',name==='quests');dialog.classList.toggle('sets-dialog',name==='sets');dialog.classList.toggle('settings-dialog',name==='settings');dialog.classList.toggle('verified-dialog',name==='verified');dialog.classList.toggle('training-dialog',['training','trainingResults'].includes(name));dialog.classList.toggle('skill-dialog',name==='talents');dialog.classList.toggle('skill-atlas-dialog',name==='talents');dialog.classList.toggle('loadout-dialog',['loadout','summons','auras'].includes(name));dialog.classList.toggle('inventory-dialog',name==='inventory');dialog.classList.toggle('flasks-dialog',name==='flasks');dialog.classList.toggle('stash-dialog',name==='stash');dialog.classList.toggle('camp-service-dialog',['forge','merchant','guide'].includes(name));dialog.classList.toggle('forge-dialog',name==='forge');dialog.scrollTop=0;keys.clear();joy={x:0,y:0};$('#stick').style.transform='';let title={achievements:['ACHIEVEMENTS','成就'],passives:['PASSIVE TREE','天賦'],stats:['','角色統計'],forge:['','鐵匠'],merchant:['','商人'],sets:['','印記收藏家'],settings:['','遊戲設定'],verified:['','公測遠征'],training:['MEASURE YOUR BUILD','DPS 訓練場'],trainingResults:['DAMAGE BREAKDOWN','訓練傷害分析'],inventory:['','裝備'],talents:['SHAPE YOUR BUILD','技能加點'],loadout:['','技能'],summons:['YOUR PERMANENT ARMY','召喚編隊'],auras:['SUSTAIN YOUR AURAS','光環配置'],characters:['YOUR HEROES','角色與存檔'],guide:['ADVENTURER’S CODEX','冒險指南'],difficulty:['THE GREATER THE RISK','遠征難度'],quests:['QUEST LOG','遠征路線'],stash:['SHARED ACROSS YOUR HEROES','共用倉庫'],flasks:['PREPARE YOUR FLASK BELT','充能藥水腰帶']}[name];if(!title)return;$('#dialog-eyebrow').textContent=title[0];$('#dialog-title').textContent=title[1];renderPanel();if(!dialog.open)dialog.showModal();$('#dialog-body').scrollTop=0;positionInventoryInspector();if(name==='quests')requestAnimationFrame(focusRouteProgress);updatePause();}
+function closePanel(){inventoryDiscardBatch=null;gearDiscardPending=null;if(catalogDialog.open)catalogDialog.close();leaveConnectedPanel();disposeSkillAtlas();disposeRingPanel();hideItemTooltip();clearInventoryDrag();passiveDrag=null;dialog.close();panel=null;updatePause();}
 function renderPanelControls(){
  $('#settings-tools').hidden=panel!=='settings';
  const ring=M.isRingHero(c),artisan=['forge','merchant','flasks'].includes(panel),gear=panel==='inventory',skills=['talents','passives','loadout','summons','auras'].includes(panel),links=gear?[]:skills?[...(ring?[['talents','燼脈圖']]:[['talents','加點'],['passives','天賦']]),['loadout','技能']]:artisan?[['merchant','交易'],['flasks','藥水'],['forge','鐵匠']]:[];
  dialog.classList.toggle('tabbed-dialog',skills||artisan||panel==='quests');
  $('#panel-tabs').innerHTML=links.map(([id,label])=>`<button data-panel="${id}" class="${panel===id?'selected':''}" aria-pressed="${panel===id}">${label}</button>`).join('')+(!ring&&skills?panel==='passives'?`<span class="panel-points" title="每級1點；基礎數值由天賦成長，三首領成就另給1點">天賦點 <b>${M.passivePoints(c)}</b></span><button class="panel-refund" data-passive-reset title="使用返脈石重置天賦" aria-label="重置天賦" ${e.mode==='playing'||!Object.keys(c.passives||{}).length?'disabled':''}>↺</button>`:`<span class="panel-points" title="1級1點；每3級獲得1點；技能最高10級；裝備最多額外3級">技能點 <b>${c.points}</b></span><button class="panel-refund" data-refund title="免費退還所有技能點">重置 ↺</button>`:'')+(!ring&&state.active&&['talents','passives'].includes(panel)&&e.mode==='camp'?'<button type="button" class="panel-refund" data-ring-convert>轉入燼脈圖</button>':'');
 }
-function renderPanel(){if(M.isRingHero(c)&&panel==='passives')panel='talents';dialog.classList.toggle('ring-tree-dialog',panel==='talents'&&M.isRingHero(c));renderPanelControls();const scroll=dialog.scrollTop,detailScroll=$('#inventory-selection')?.scrollTop||0,detailItem=inventorySelection?.id;if(panel==='sets')renderSets();if(panel==='inventory')renderInventory();if(panel==='talents')renderTalents();if(panel==='loadout')renderLoadout();if(panel==='characters')renderCharacters();if(panel==='guide')renderGuide();if(panel==='quests')renderQuests();if(panel==='achievements')renderAchievements();if(panel==='stats')renderCharacterStats();if(panel==='passives')renderPassives();if(panel==='stash')renderStash();if(panel==='forge')renderForge();if(panel==='merchant')renderMerchant();if(panel==='flasks')renderFlasks();if(panel==='training')renderTraining();if(panel==='trainingResults')renderTrainingResults();if(panel==='settings')renderSettings();if(panel==='cloud')renderCloud();if(panel==='feedback')renderFeedback();if(panel==='verified')renderVerified();dialog.scrollTop=scroll;if(inventorySelection?.id===detailItem&&$('#inventory-selection'))$('#inventory-selection').scrollTop=detailScroll;if(!inventorySelection)inventoryPanelPinned=false;positionInventoryInspector();}
+function renderPanel(){if(M.isRingHero(c)&&panel==='passives')panel='talents';dialog.classList.toggle('ring-tree-dialog',panel==='talents'&&M.isRingHero(c));renderPanelControls();const scroll=dialog.scrollTop,detailScroll=$('#inventory-selection')?.scrollTop||0,detailItem=inventorySelection?.id;if(panel==='sets')renderSets();if(panel==='inventory')renderInventory();if(panel==='talents')renderTalents();if(panel==='loadout')renderLoadout();if(panel==='characters')renderCharacters();if(panel==='guide')renderGuide();if(panel==='quests')renderQuests();if(panel==='achievements')renderAchievements();if(panel==='stats')renderCharacterStats();if(panel==='passives')renderPassives();if(panel==='stash')renderStash();if(panel==='forge')renderForge();if(panel==='merchant')renderMerchant();if(panel==='flasks')renderFlasks();if(panel==='training')renderTraining();if(panel==='trainingResults')renderTrainingResults();if(panel==='settings')renderSettings();if(panel==='verified')renderVerified();dialog.scrollTop=scroll;if(inventorySelection?.id===detailItem&&$('#inventory-selection'))$('#inventory-selection').scrollTop=detailScroll;if(!inventorySelection)inventoryPanelPinned=false;positionInventoryInspector();}
 function skillSource(id){const sources=M.SLOTS.filter(slot=>c.equipment[slot]?.grantedSkill===id);const learned=M.skillNode(c.cls,id)?.ability&&(c.talents[id]||0)>0;return [id==='m_titan'?'萬靈王庭5件授予':'',learned?'技能加點習得':'',sources.length?'裝備 · '+sources.map(slot=>M.SLOT_NAMES[slot]).join('／'):''].filter(Boolean).join(' ＋ ');}
 function equipmentGrantHint(item){const worn=Object.values(c.equipment).some(i=>i.id===item.id),id=item.grantedSkill,slot=M.skillLoadout(c).indexOf(id),family=M.skillCategory(id),where=family==='summon'?'召喚編隊 · C':family==='aura'?'光環配置':family==='movement'?'位移配置 · 空白鍵':'主動配置';return worn?(slot>=0?'已配置 '+SLOT_LABELS[slot]:M.movementSkill(c)===id?'已配置空白鍵':'已取得 · 前往'+where)+' · 不限職業／等級':'穿戴後可用 · '+where+' · 不限職業／等級';}
 async function commitSkillConfig(mutate,message){
@@ -475,7 +526,7 @@ function restoreLegacyEquipment(hero){
  return !!(hero?.pendingLoot?.length&&hero.bag.length<Inventory.BAG_CAPACITIES.equipment&&M.claimPendingLoot(hero).ok);
 }
 function prepareCandidate(profile){
- for(const hero of Object.values(profile.characters)){restoreLegacyEquipment(hero);M.reconcileSkillLoadouts(hero);}
+ for(const hero of Object.values(profile.characters)){if(e.mode==='camp')restoreLegacyEquipment(hero);M.reconcileSkillLoadouts(hero);}
  refreshPaidCheckpoint(profile,e);
 }
 function categoryTag(value){const category=M.SKILL_CATEGORIES[M.skillCategory(value)];return `<span class="skill-category" style="--category-color:${category.color}">${category.name}</span>`;}
@@ -798,6 +849,7 @@ function renderRingPanel(){
  ringPanel=mountRingTree(body.firstElementChild,{
   tree:M.RING_TREE,hero:c,budget,...resetInfo,
   toolbarAnchor:document.body.classList.contains('mobile-phone')?$('#dialog-close'):null,
+  draftAnchor:body,
   stateFor:(id,hero=c)=>M.ringNodeState(hero,id),skillDetails:ringSkillDetails,
   stage:(hero,id)=>M.allocateRing(hero,id),
   invest:ids=>progressionCommit(hero=>{
@@ -833,17 +885,17 @@ async function convertRingCharacter(){
 }
 function useFlaskSlot(index){
  const used=e.useFlask(index);
- if(!used&&e.flaskError)toast(e.flaskError);
+ if(!used&&e.flaskError)gameNotices.notice(e.flaskError);
  updateHUD();
 }
-function combatAction(action){if(dialog.open||e.paused||e.transition||document.hidden||!state.active||e.mode==='camp'&&(paidBusy||state.rifts?.activeRun&&!paidLockOwned))return false;if(['summon','auras'].includes(action)?!['camp','playing'].includes(e.mode):e.mode!=='playing')return false;updatePointerAim();const used=action==='summon'?e.summonArmy():action==='auras'?e.toggleAuras():e.dodge();if(!used&&e.skillError)toast(e.skillError);if(!used||action==='dash')updateHUD();return used;}
+function combatAction(action){if(dialog.open||e.paused||e.transition||document.hidden||!state.active||e.mode==='camp'&&(paidBusy||state.rifts?.activeRun&&!paidLockOwned))return false;if(['summon','auras'].includes(action)?!['camp','playing'].includes(e.mode):e.mode!=='playing')return false;updatePointerAim();const used=action==='summon'?e.summonArmy():action==='auras'?e.toggleAuras():e.dodge();if(!used&&e.skillError)gameNotices.notice(e.skillError);if(!used||action==='dash')updateHUD();return used;}
 function configureSummonCount(id,count){const plan=M.summonPlan(c),def=M.abilityFor(c,id),row=plan.rows.find(r=>r.id===id)||summonDraftRow(def);if(count>row.count){const reason=summonIncrementReason(plan,row);if(reason){toast(reason+'。');return false;}}return commitSkillConfig(hero=>M.setSummonCount(hero,id,count),'召喚編隊已儲存 · 按 C 重召。');}
-function castSlot(index,hold=false,quiet=false){if(dialog.open||pwaOverlayOpen||e.paused||e.transition||document.hidden||!state.active||e.mode!=='playing')return false;updatePointerAim();const used=e.cast(index);if(used&&e.channel?.id===M.skillLoadout(c)[index]&&e.ability(e.channel.id)?.type==='charge'&&!hold)e.channel.source='tap';if(!quiet&&!used&&e.skillError&&!e.skillError.startsWith('魔力不足'))toast(e.skillError);if(used||!quiet)updateHUD();return used;}
+function castSlot(index,hold=false,quiet=false){if(dialog.open||pwaOverlayOpen||e.paused||e.transition||document.hidden||!state.active||e.mode!=='playing')return false;updatePointerAim();const used=e.cast(index);if(used&&e.channel?.id===M.skillLoadout(c)[index]&&e.ability(e.channel.id)?.type==='charge'&&!hold)e.channel.source='tap';if(!quiet&&!used&&e.skillError)gameNotices.notice(e.skillError);if(used||!quiet)updateHUD();return used;}
 document.addEventListener('click',async ev=>{let b=ev.target.closest('button');if(!b)return;let d=b.dataset;if(d.achievementScope){achievementScope=d.achievementScope;renderAchievements();return;}if(d.achievementFilter){achievementFilter=d.achievementFilter;renderAchievements();return;}if('claimAllAchievements'in d){
  if(panel!=='achievements')return;
  progressionCommit((hero,profile)=>M.claimAchievements(profile,hero.id,scopedAchievements(hero).filter(item=>item.claimable).map(item=>item.id)),result=>`已領取 ${result.count} 項成就獎勵。`,false);
  return;
- }if(d.claimAchievement){progressionCommit((hero,profile)=>M.claimAchievement(profile,hero.id,d.claimAchievement),'成就獎勵已領取。',false);return;}if(d.passiveBranch){const owned=Object.keys(c.passives||{}).filter(id=>M.PASSIVE_NODES[id]?.branch===d.passiveBranch).sort((a,b)=>Math.hypot(M.PASSIVE_NODES[b].x,M.PASSIVE_NODES[b].y)-Math.hypot(M.PASSIVE_NODES[a].x,M.PASSIVE_NODES[a].y));jumpPassiveNode(owned.find(id=>M.PASSIVE_NODES[id].path)||d.passiveBranch+'_l4');return;}if(d.passiveFilter){passiveFilter=d.passiveFilter;filterPassives();return;}if(d.passiveNode){passiveSelection=d.passiveNode;$$('.passive-node').forEach(node=>{const selected=node.dataset.passiveNode===passiveSelection;node.classList.toggle('selected',selected);node.setAttribute('aria-pressed',String(selected));});renderPassiveDetail();return;}if(d.passiveInvest){progressionCommit(hero=>M.allocatePassive(hero,d.passiveInvest),'天賦已生效。');return;}if('passiveReset'in d){showLegacyTalentReset();return;}if('passiveResetCancel'in d){b.closest('.legacy-respec')?.remove();return;}if('passiveResetConfirm'in d&&panel==='passives'){if(await useTalentReset())b.closest('.legacy-respec')?.remove();return;}if('closePassive'in d){passiveSelection=null;renderPassiveDetail();return;}if(d.passiveView){if(d.passiveView==='fit')centerPassiveView(true);else if(d.passiveView==='center')centerPassiveView(false);else zoomPassiveView(d.passiveView==='zoom-in'?1.2:1/1.2);return;}if(d.mapTab){mapTab=d.mapTab;renderQuests();return;}if(d.chapter){selectedChapter=Number(d.chapter);renderQuests();return;}if(d.riftOption){riftDraft[d.riftOption]=['challenge','guardian'].includes(d.riftOption)?Number(d.value):d.value;renderQuests();return;}if(d.riftClaim){claimRiftReward(d.riftClaim);return;}if(d.riftCraft){craftRift(d.riftCraft);return;}if(d.riftEnter){enterPaid(d.riftEnter);return;}if('riftSettle'in d){if(e.mode==='camp')void settleStoredPaidRun({wait:true});else if(e.mode==='victory')void finishPaid('won');return;}if(d.routePreview){selectRouteNode(d.routePreview);return;}if(d.routeChoose){chooseRouteRoom(d.routeChoose);return;}if('routeStart'in d){if(start())closePanel();return;}if(d.forgeTab&&panel==='forge'){forgeTab=d.forgeTab;workshopTab=forgeTab==='craft'?'craft':'sockets';craftSelection=null;renderForge();return;}if(d.setsView&&panel==='sets'){setsView=d.setsView;renderSets();return;}if(d.guideTopic&&panel==='guide'&&Object.hasOwn(CAMP_GUIDE,d.guideTopic)){guideTopic=d.guideTopic;renderGuide();return;}if('redeemRespec'in d&&panel==='sets'){await progressionCommit((hero,profile)=>M.redeemRespecStone(profile,hero.id,e.mode),'已取得 1 顆返脈石。',false);return;}if(d.trainingAction){trainingAction(d.trainingAction);return;}if(d.summonStep){configureSummonCount(d.summonStep,Number(d.count));return;}if(d.socketPick!==undefined){craftSelection={socketIndex:Number(d.socketPick)};refreshSelection();return;}if(d.gearView==='rolls'||d.gearView==='facts'){gearInspectorView=d.gearView;refreshSelection();$('#inventory-selection').scrollTop=0;if(dialog.classList.contains('inventory-detail-focus'))$('#dialog-body').scrollTop=0;$(`[data-gear-view="${d.gearView}"]`)?.focus({preventScroll:true});return;}if(d.weaponTarget){weaponTarget=d.weaponTarget;refreshSelection();$(`[data-weapon-target="${d.weaponTarget}"]`)?.focus({preventScroll:true});return;}if(d.ringTarget){ringTarget=d.ringTarget;refreshSelection();$(`[data-ring-target="${d.ringTarget}"]`)?.focus({preventScroll:true});return;}if(d.workshopAction){workshopAction=d.workshopAction;craftSelection=null;refreshSelection();return;}if(d.craftGem){craftSelection={gemKey:d.craftGem,tier:Number(d.gemTier),socketIndex:Number(d.socketIndex)};refreshSelection();return;}if(d.craftCommit){commitCraft(d.craftCommit);return;}if(d.combineGem){commitGemCombine(d.combineGem,Number(d.gemTier));return;}if('closeTalent'in d){talentSheetOpen=false;$('#skill-detail').classList.remove('mobile-detail-open');return;}if(d.inventoryPage){selectInventoryPage(d.inventoryPage);return;}if(d.inventoryTab){inventoryTab=d.inventoryTab;inventorySelection=null;renderInventory();return;}if(d.flaskBatch){flaskBatchAction(d.flaskBatch);return;}if(d.flaskSelect){if(e.mode!=='camp')return;flaskSelection=d.flaskSelect;renderFlasks();$('.flask-selected-sheet')?.scrollIntoView({block:'start'});$('[data-close-flask]')?.focus({preventScroll:true});return;}if(d.flaskTarget!==undefined){flaskTarget=Number(d.flaskTarget);renderFlasks();return;}if(d.flaskAction){flaskAction(d.flaskAction,d.flaskItem);return;}if('closeFlask'in d){const id=flaskSelection;flaskSelection=null;renderFlasks();$$('[data-flask-select]').find(button=>button.dataset.flaskSelect===id)?.focus();return;}if(d.inventoryItem){if(Date.now()>inventoryClickUntil){if(ev.shiftKey&&fineInventoryPointer()&&panel==='stash'&&e.mode==='camp'){if(['bag','flask-bag'].includes(d.inventoryFrom)){moveStash('deposit',d.inventoryItem);return;}if(['stash','flask-stash'].includes(d.inventoryFrom)){moveStash('withdraw',d.inventoryItem);return;}}if(ev.pointerType==='touch'||ev.sourceCapabilities?.firesTouchEvents){clearTimeout(itemTooltipTimer);const id=d.inventoryItem,from=d.inventoryFrom;itemTooltipTimer=setTimeout(()=>{if(dialog.open&&['inventory','stash','forge','merchant'].includes(panel))selectInventoryItem(id,from);},360);}else selectInventoryItem(d.inventoryItem,d.inventoryFrom);}return;}if('clearSelection'in d){closeInventoryInspector(250,true);return;}if('inventorySort'in d){inventoryAction('sort');return;}if(d.inventoryAction){inventoryAction(d.inventoryAction);return;}if(d.skillTab!==undefined){skillTab=Number(d.skillTab);selectedSkillID=null;talentSheetOpen=false;renderTalents();return;}if(d.inspectSkill){inspectSkillAtlas(d.inspectSkill);return;}if(d.panel){openPanel(d.panel);return;}if(d.deposit){moveStash('deposit',d.deposit);return;}if(d.withdraw){moveStash('withdraw',d.withdraw);return;}if(d.flask!==undefined){useFlaskSlot(Number(d.flask));return;}if(d.hero){activateHero(d.hero);return;}if('createScreen'in d){renderCreateCharacter();return;}if(d.draftWeapon){draftWeapon=d.draftWeapon;$$('[data-draft-weapon]').forEach(el=>{const selected=el.dataset.draftWeapon===draftWeapon;el.classList.toggle('selected',selected);el.setAttribute('aria-pressed',String(selected));});return;}if('ringConvert' in d){convertRingCharacter();return;}if('rosterBack'in d){if(Object.keys(state.characters).length)openPanel('characters');else closePanel();return;}if(d.renameScreen){renderRenameCharacter(d.renameScreen);return;}if(d.deleteScreen){renderDeleteCharacter(d.deleteScreen);return;}if('returnCamp'in d){if(!await returnToCamp())return;save();renderCharacters();return;}if(d.learn){changeBuild('learn',d.learn);return;}if('refund'in d){changeBuild('refund');return;}if(d.difficulty){if(panel!=='quests'||e.mode!=='camp'||state.rifts?.activeRun)return;if(!M.setDifficulty(c,Number(d.difficulty))){toast('需先通關上一難度的所有章節。');return;}if(!M.canChapter(c,c.difficulty,selectedChapter))selectedChapter=1;save();updateMode();renderQuests();return;}if(d.result){if(d.result==='settle'){finishPaid('won');return;}if(d.result==='next-chapter'){const next=nextCampaignChapter();if(next)start(next.id);return;}if(d.result==='retry')start();else{if(!await returnToCamp())return;save(true);}return;}if(d.action){if(/^skill[0-2]$/.test(d.action))castSlot(Number(d.action.slice(-1)));if(['dash','summon'].includes(d.action))combatAction(d.action);return;}if('export'in d){await save(true);const {blob,filename}=await encodeProfileBackup(state);downloadSaveFile(blob,filename);return;}if('import'in d){if(e.mode==='playing'){toast('請先結束遠征，再匯入存檔。');return;}$('#import-file').click();}});
+ }if(d.claimAchievement){progressionCommit((hero,profile)=>M.claimAchievement(profile,hero.id,d.claimAchievement),'成就獎勵已領取。',false);return;}if(d.passiveBranch){const owned=Object.keys(c.passives||{}).filter(id=>M.PASSIVE_NODES[id]?.branch===d.passiveBranch).sort((a,b)=>Math.hypot(M.PASSIVE_NODES[b].x,M.PASSIVE_NODES[b].y)-Math.hypot(M.PASSIVE_NODES[a].x,M.PASSIVE_NODES[a].y));jumpPassiveNode(owned.find(id=>M.PASSIVE_NODES[id].path)||d.passiveBranch+'_l4');return;}if(d.passiveFilter){passiveFilter=d.passiveFilter;filterPassives();return;}if(d.passiveNode){passiveSelection=d.passiveNode;$$('.passive-node').forEach(node=>{const selected=node.dataset.passiveNode===passiveSelection;node.classList.toggle('selected',selected);node.setAttribute('aria-pressed',String(selected));});renderPassiveDetail();return;}if(d.passiveInvest){progressionCommit(hero=>M.allocatePassive(hero,d.passiveInvest),'天賦已生效。');return;}if('passiveReset'in d){showLegacyTalentReset();return;}if('passiveResetCancel'in d){b.closest('.legacy-respec')?.remove();return;}if('passiveResetConfirm'in d&&panel==='passives'){if(await useTalentReset())b.closest('.legacy-respec')?.remove();return;}if('closePassive'in d){passiveSelection=null;renderPassiveDetail();return;}if(d.passiveView){if(d.passiveView==='fit')centerPassiveView(true);else if(d.passiveView==='center')centerPassiveView(false);else zoomPassiveView(d.passiveView==='zoom-in'?1.2:1/1.2);return;}if(d.mapTab){mapTab=d.mapTab;renderQuests();return;}if(d.chapter){selectedChapter=Number(d.chapter);renderQuests();return;}if(d.riftOption){riftDraft[d.riftOption]=['challenge','guardian'].includes(d.riftOption)?Number(d.value):d.value;renderQuests();return;}if(d.riftClaim){claimRiftReward(d.riftClaim);return;}if(d.riftCraft){craftRift(d.riftCraft);return;}if(d.riftEnter){enterPaid(d.riftEnter);return;}if('riftSettle'in d){if(e.mode==='camp')void settleStoredPaidRun({wait:true});else if(e.mode==='victory')void finishPaid('won');return;}if(d.routePreview){selectRouteNode(d.routePreview);return;}if(d.routeChoose){chooseRouteRoom(d.routeChoose);return;}if('routeStart'in d){if(start())closePanel();return;}if(d.forgeTab&&panel==='forge'){forgeTab=d.forgeTab;workshopTab=forgeTab==='craft'?'craft':'sockets';craftSelection=null;renderForge();return;}if(d.setsView&&panel==='sets'){setsView=d.setsView;renderSets();return;}if(d.guideTopic&&panel==='guide'&&Object.hasOwn(CAMP_GUIDE,d.guideTopic)){guideTopic=d.guideTopic;renderGuide();return;}if('redeemRespec'in d&&panel==='sets'){await progressionCommit((hero,profile)=>M.redeemRespecStone(profile,hero.id,e.mode),'已取得 1 顆返脈石。',false);return;}if(d.trainingAction){trainingAction(d.trainingAction);return;}if(d.summonStep){configureSummonCount(d.summonStep,Number(d.count));return;}if(d.socketPick!==undefined){craftSelection={socketIndex:Number(d.socketPick)};refreshSelection();return;}if(d.gearView==='rolls'||d.gearView==='facts'){gearInspectorView=d.gearView;refreshSelection();$('#inventory-selection').scrollTop=0;if(dialog.classList.contains('inventory-detail-focus'))$('#dialog-body').scrollTop=0;$(`[data-gear-view="${d.gearView}"]`)?.focus({preventScroll:true});return;}if(d.weaponTarget){weaponTarget=d.weaponTarget;refreshSelection();$(`[data-weapon-target="${d.weaponTarget}"]`)?.focus({preventScroll:true});return;}if(d.ringTarget){ringTarget=d.ringTarget;refreshSelection();$(`[data-ring-target="${d.ringTarget}"]`)?.focus({preventScroll:true});return;}if(d.workshopAction){workshopAction=d.workshopAction;craftSelection=null;refreshSelection();return;}if(d.craftGem){craftSelection={gemKey:d.craftGem,tier:Number(d.gemTier),socketIndex:Number(d.socketIndex)};refreshSelection();return;}if(d.craftCommit){commitCraft(d.craftCommit);return;}if(d.combineGem){commitGemCombine(d.combineGem,Number(d.gemTier));return;}if('closeTalent'in d){talentSheetOpen=false;$('#skill-detail').classList.remove('mobile-detail-open');return;}if(d.inventoryPage){selectInventoryPage(d.inventoryPage);return;}if(d.inventoryTab){inventoryDiscardBatch=null;inventoryTab=d.inventoryTab;inventorySelection=null;renderInventory();return;}if(d.flaskBatch){flaskBatchAction(d.flaskBatch);return;}if(d.flaskSelect){if(e.mode!=='camp')return;flaskSelection=d.flaskSelect;renderFlasks();$('.flask-selected-sheet')?.scrollIntoView({block:'start'});$('[data-close-flask]')?.focus({preventScroll:true});return;}if(d.flaskTarget!==undefined){flaskTarget=Number(d.flaskTarget);renderFlasks();return;}if(d.flaskAction){flaskAction(d.flaskAction,d.flaskItem);return;}if('closeFlask'in d){const id=flaskSelection;flaskSelection=null;renderFlasks();$$('[data-flask-select]').find(button=>button.dataset.flaskSelect===id)?.focus();return;}if(d.inventoryItem){if(Date.now()>inventoryClickUntil){if(ev.shiftKey&&fineInventoryPointer()&&panel==='stash'&&e.mode==='camp'){if(['bag','flask-bag'].includes(d.inventoryFrom)){moveStash('deposit',d.inventoryItem);return;}if(['stash','flask-stash'].includes(d.inventoryFrom)){moveStash('withdraw',d.inventoryItem);return;}}if(ev.pointerType==='touch'||ev.sourceCapabilities?.firesTouchEvents){clearTimeout(itemTooltipTimer);const id=d.inventoryItem,from=d.inventoryFrom;itemTooltipTimer=setTimeout(()=>{if(dialog.open&&['inventory','stash','forge','merchant'].includes(panel))selectInventoryItem(id,from);},360);}else selectInventoryItem(d.inventoryItem,d.inventoryFrom);}return;}if('clearSelection'in d){closeInventoryInspector(250,true);return;}if('inventorySort'in d){inventoryAction('sort');return;}if(d.inventoryAction){inventoryAction(d.inventoryAction);return;}if(d.skillTab!==undefined){skillTab=Number(d.skillTab);selectedSkillID=null;talentSheetOpen=false;renderTalents();return;}if(d.inspectSkill){inspectSkillAtlas(d.inspectSkill);return;}if(d.panel){openPanel(d.panel);return;}if(d.deposit){moveStash('deposit',d.deposit);return;}if(d.withdraw){moveStash('withdraw',d.withdraw);return;}if(d.flask!==undefined){useFlaskSlot(Number(d.flask));return;}if(d.hero){activateHero(d.hero);return;}if('createScreen'in d){renderCreateCharacter();return;}if(d.draftWeapon){draftWeapon=d.draftWeapon;$$('[data-draft-weapon]').forEach(el=>{const selected=el.dataset.draftWeapon===draftWeapon;el.classList.toggle('selected',selected);el.setAttribute('aria-pressed',String(selected));});return;}if('ringConvert' in d){convertRingCharacter();return;}if('rosterBack'in d){if(Object.keys(state.characters).length)openPanel('characters');else closePanel();return;}if(d.renameScreen){renderRenameCharacter(d.renameScreen);return;}if(d.deleteScreen){renderDeleteCharacter(d.deleteScreen);return;}if('returnCamp'in d){if(!await returnToCamp())return;save();renderCharacters();return;}if(d.learn){changeBuild('learn',d.learn);return;}if('refund'in d){changeBuild('refund');return;}if(d.difficulty){if(panel!=='quests'||e.mode!=='camp'||state.rifts?.activeRun)return;if(!M.setDifficulty(c,Number(d.difficulty))){toast('需先通關上一難度的所有章節。');return;}if(!M.canChapter(c,c.difficulty,selectedChapter))selectedChapter=1;save();updateMode();renderQuests();return;}if(d.result){if(d.result==='settle'){finishPaid('won');return;}if(d.result==='next-chapter'){const next=nextCampaignChapter();if(next)start(next.id);return;}if(d.result==='retry')start();else{if(!await returnToCamp())return;save(true);}return;}if(d.action){if(/^skill[0-2]$/.test(d.action))castSlot(Number(d.action.slice(-1)));if(['dash','summon'].includes(d.action))combatAction(d.action);return;}if('export'in d){await save(true);const {blob,filename}=await encodeProfileBackup(state);downloadSaveFile(blob,filename);return;}if('import'in d){if(e.mode==='playing'){toast('請先結束遠征，再匯入存檔。');return;}$('#import-file').click();}});
 const composingBagSearches=new WeakSet();
 $('#dialog-body').addEventListener('compositionstart',event=>{
  if(event.target.id==='bag-search')composingBagSearches.add(event.target);
@@ -1026,23 +1078,20 @@ async function bootStorage(){
   if(!state.rifts?.activeRun&&restoreLegacyEquipment(state.characters[state.active]))void save(true);
   document.body.classList.remove('storage-loading');$('#storage-loader').hidden=true;updateMode();updateCharacter(false);updateHUD();
   if(verifiedEntry){if(panel!=='verified')openPanel('verified');}
-  else if(cloudOpenOnReady)openPanel('cloud');
   else if(!state.active)openPanel(recoveryBackups.length?'settings':'characters');
   if(settlement==='locked'&&state.rifts?.activeRun)void settleStoredPaidRun({wait:true});
   if(profileStore.info.resetIncompatible)toast('原始存檔已保留。可在設定下載備份或匯入。');else if(profileStore.info.migrated)toast('角色已搬移至壓縮存檔，舊儲存空間已釋放。');
  }catch(error){storageOK=false;$('#storage-loader').innerHTML='<span>'+(error.code==='RECOVERY_BACKUP_FAILED'?'原始存檔已保留。請釋放瀏覽器儲存空間後重試。':'無法讀取本機存檔')+'</span><button type="button" data-storage-retry>重新載入</button>';}
 }
 void bootStorage();requestAnimationFrame(loop);
-async function finishCloudSignIn(){
+async function finishVerifiedSignIn(){
+ if(!verifiedEntry)return;
  try{
-  if(await cloud.completeLogin()&&!verifiedEntry){
-   toast('已登入 Google。');
-   if(storageReady)openPanel('cloud');else cloudOpenOnReady=true;
-  }
+  await cloud.completeLogin();
  }catch{toast('登入未完成，請重新使用 Google 登入。');}
- if(verifiedEntry&&panel!=='verified')openPanel('verified');
+ if(panel!=='verified')openPanel('verified');
 }
-void finishCloudSignIn();
+void finishVerifiedSignIn();
 document.addEventListener('click',event=>{if(event.target.closest('[data-storage-retry]'))location.reload();if(storageTransactions&&event.target.closest('#panel-dialog')){event.preventDefault();event.stopImmediatePropagation();}},true);
 
 
@@ -1062,7 +1111,6 @@ function updateCharacter(persist=true){
 }
 function updateTravelEvent(type){
  if(type==='transition'){
-  hideBanner();
   stationaryCast=false;
   combatInput?.clear();
   sceneTransition.start(e);
@@ -1105,7 +1153,6 @@ function updatePlayerStatuses(auraDefs){
  const free=e.setCombat?.activeFreeAura?.();
  if(free)statuses.push({id:'covenant:'+free.id,group:'permanent',name:free.name,icon:free.icon,color:free.color,meta:'聖約光環',detail:describeAura(free)+' · 聖約常駐 · 60% 強度 · 免費'});
  for(const aura of M.equipmentAuras(c))statuses.push({id:'equipment:'+aura.id,group:'permanent',name:aura.name,icon:aura.icon,color:aura.color,meta:'裝備 · Lv.'+aura.level,detail:describeAura(aura)+' · 裝備光環 · 自動生效 · 免費'});
- if(lastProc&&performance.now()<lastProc.until)statuses.push({...PLAYER_STATUSES.proc,id:'equipment-proc',group:'beneficial',name:'觸發 · '+lastProc.name,remaining:(lastProc.until-performance.now())/1000,max:1.7});
  for(const [id,pool]of Object.entries(e.minionCombat?.playerShields||{})){
   if(pool.remaining>0&&pool.t>0){const blood=id==='bloodward',base=PLAYER_STATUSES.supportShield;statuses.push({...base,id:'support-shield:'+id,group:'beneficial',name:blood?'赤魄護身':base.name,color:blood?'#dd847c':base.color,detail:(blood?'血怒脈衝':'召喚物')+'提供護盾，剩餘可吸收 '+Math.ceil(pool.remaining)+' 傷害。',remaining:pool.t,max:blood?2:4});}
  }
@@ -1589,11 +1636,13 @@ function inventoryItem(id,from){if(['resource','flask-bag','flask-equipped','fla
 
 function inventoryCell(item,from,slot=null,stashSlot=null){
  if(item&&(from==='resource'||Inventory.isFlask(item))){const entry=Inventory.find(state,c.id,item.id,from);return entry?carriedItemCell(entry,{selected:inventorySelection?.id===item.id&&inventorySelection?.from===from,draggable:panel==='inventory'||panel==='stash'&&from!=='resource',flaskSlot:from==='flask-equipped'?slot:null}):'';}
- const selected=inventorySelection?.id===item?.id&&inventorySelection?.from===from;
+ const batch=panel==='inventory'&&inventoryDiscardBatch,eligible=batch&&from==='bag';
+ const selected=batch?!!eligible&&batch.ids.has(item?.id):inventorySelection?.id===item?.id&&inventorySelection?.from===from;
  const dropAttribute=stashSlot!==null?`data-stash-slot="${stashSlot}" data-stash-drop`:'data-bag-drop';
  if(!item)return `<div class="inventory-cell empty-cell" ${dropAttribute}="" role="gridcell" aria-label="${from==='stash'?'空倉庫格':'空背包格'}"></div>`;
  const svg=itemIcon(item),requirement=M.equipRequirement(c,item),ringChoice=item.slot==='ring'&&!requirement.ok&&requirement.reason.includes('請選擇');
- return `<button type="button" class="inventory-cell ${item.uniqueID?'unique-cell ':''}${!requirement.ok&&!ringChoice&&from!=='equipped'?'level-restricted ':''}${from==='equipped'?'worn-cell':''} ${selected?'selected':''}" data-inventory-item="${esc(item.id)}" data-inventory-from="${from}" ${slot?`data-equip-slot="${slot}"`:`${dropAttribute}="${esc(item.id)}"`} draggable="${panel==='inventory'||panel==='stash'}" style="--item-color:${M.itemColor(item)}" aria-label="${esc(item.name)}，${itemFormText(item)}，${M.RARITIES[item.rarity].name}${from==='equipped'?'，已穿戴':''}" aria-pressed="${selected}">${icon(svg)}${armorClass(item)?`<small class="cell-armor-weight" title="${ARMOR_WEIGHTS[armorClass(item)].name}">${ARMOR_WEIGHTS[armorClass(item)].name[0]}</small>`:''}${item.uniqueID?'<i class="cell-unique" aria-label="獨特裝備">✺</i>':''}${!requirement.ok&&from==='bag'?'<small class="cell-requirement" title="'+esc(requirement.reason)+'">'+(c.level<(item.requiredLevel??1)?'Lv.'+item.requiredLevel:ringChoice?'選位':'衝突')+'</small>':''}${item.upgrade?`<b class="cell-upgrade">+${item.upgrade}</b>`:''}${item.set?'<i class="cell-set" aria-label="套裝">◆</i>':''}${item.grantedSkill?'<i class="cell-skill" aria-label="授予技能">✦</i>':''}<span class="cell-quality"></span></button>`;
+ const batchMark=eligible?`<span class="inventory-batch-check" aria-hidden="true">${icon('check')}</span>`:'';
+ return `<button type="button" class="inventory-cell ${item.uniqueID?'unique-cell ':''}${!requirement.ok&&!ringChoice&&from!=='equipped'?'level-restricted ':''}${from==='equipped'?'worn-cell':''} ${selected?'selected':''}" data-inventory-item="${esc(item.id)}" data-inventory-from="${from}" ${slot?`data-equip-slot="${slot}"`:`${dropAttribute}="${esc(item.id)}"`} draggable="${!batch&&(panel==='inventory'||panel==='stash')}" style="--item-color:${M.itemColor(item)}" aria-label="${esc(item.name)}，${itemFormText(item)}，${M.RARITIES[item.rarity].name}${from==='equipped'?'，已穿戴':''}" aria-pressed="${selected}">${icon(svg)}${armorClass(item)?`<small class="cell-armor-weight" title="${ARMOR_WEIGHTS[armorClass(item)].name}">${ARMOR_WEIGHTS[armorClass(item)].name[0]}</small>`:''}${item.uniqueID?'<i class="cell-unique" aria-label="獨特裝備">✺</i>':''}${!requirement.ok&&from==='bag'?'<small class="cell-requirement" title="'+esc(requirement.reason)+'">'+(c.level<(item.requiredLevel??1)?'Lv.'+item.requiredLevel:ringChoice?'選位':'衝突')+'</small>':''}${item.upgrade?`<b class="cell-upgrade">+${item.upgrade}</b>`:''}${item.set?'<i class="cell-set" aria-label="套裝">◆</i>':''}${item.grantedSkill?'<i class="cell-skill" aria-label="授予技能">✦</i>':''}${batchMark}<span class="cell-quality"></span></button>`;
 }
 function gearImplicitMarkup(item){
  const weight=ARMOR_WEIGHTS[armorClass(item)],weapon=M.WEAPON_TYPES[item.weaponType],lines=[],fmt=value=>(value>0?'+':'')+Math.round(value*1000)/10+'%';
@@ -1629,9 +1678,9 @@ function gearInspectorColumn(item,caption,worn,target){
  const req=worn?null:M.equipRequirement(c,item,target);
  const reason=req?.ok===false&&!req.reason.includes('請選擇')?req.reason:'';
  return `<div class="gear-column" style="--item-color:${M.itemColor(item)}">
-  <small class="gear-column-caption">${caption}</small>
-  <div class="gear-column-title">${icon(itemIcon(item))}<h3>${esc(item.name)}${item.upgrade?' +'+item.upgrade:''}</h3></div>
-  <p class="gear-column-meta"><span>${itemFormText(item)}</span><span>物等 ${item.level} · <span class="${c.level<required?'requirement-unmet':''}">需求 ${required}</span></span></p>
+  <div class="gear-column-label"><small class="gear-column-caption">${caption}</small>${icon(itemIcon(item))}</div>
+  <div class="gear-column-title"><h3>${esc(item.name)}${item.upgrade?' +'+item.upgrade:''}</h3></div>
+  <p class="gear-column-meta"><span>${itemFormText(item,true)}</span><span>物等 ${item.level} · <span class="${c.level<required?'requirement-unmet':''}">需求 ${required}</span></span></p>
   ${stats.some(([,value])=>value)?`<dl class="gear-white-values" aria-label="基礎白值">${stats.filter(([,value])=>value).map(([label,value])=>`<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>`:''}
   ${reason?`<p class="gear-requirement requirement-unmet">${esc(reason)}</p>`:''}
  </div>`;
@@ -1664,9 +1713,11 @@ function gearInspectorFacts(item){
 function inventoryDetails(item,from){
  const target=item.slot==='ring'?ringTarget:item.slot==='weapon'?weaponTarget:item.slot;
  const old=from==='bag'&&target?c.equipment[target]:null,columns=old?'has-comparison':'';
- return `<div class="gear-columns ${columns}">${gearInspectorColumn(item,from==='equipped'?'目前穿戴':from==='stash'?'共用倉庫':'背包物品',from==='equipped',target)}${old?gearInspectorColumn(old,'目前穿戴 · '+M.SLOT_NAMES[target],true,target):''}</div>
- ${gearSetBonusesMarkup([item,old],gearInspectorView==='facts')}
- ${gearInspectorView==='rolls'?equipmentAffixesMarkup(item,old):`<div class="gear-columns gear-facts-grid ${columns}">${gearInspectorFacts(item)}${old?gearInspectorFacts(old):''}</div>`}`;
+ const facts=gearInspectorView==='facts',sets=gearSetBonusesMarkup([item,old],facts);
+ const equippedCaption=['offhand','ring_left','ring_right'].includes(target)?M.SLOT_NAMES[target]:'目前穿戴';
+ return `<div class="gear-columns ${columns}">${gearInspectorColumn(item,from==='equipped'?'目前穿戴':from==='stash'?'共用倉庫':'背包物品',from==='equipped',target)}${old?gearInspectorColumn(old,equippedCaption,true,target):''}</div>
+ ${facts?`${sets}<div class="gear-columns gear-facts-grid ${columns}">${gearInspectorFacts(item)}${old?gearInspectorFacts(old):''}</div>`:
+  equipmentAffixesMarkup(item,old)+(sets?`<details class="gear-set-disclosure"><summary>套裝效果</summary>${sets}</details>`:'')}`;
 }
 
 function enhancementMarkup(item,slot){
@@ -1702,9 +1753,8 @@ function itemActionIcons(item,from){
 }
 function selectionMarkup(){
  const selected=inventorySelection,item=selected&&inventoryItem(selected.id,selected.from);if(!item)return '';
- const pageMove=inventoryPageMoveMarkup(selected);
- if(selected.from==='resource')return resourceSelectionMarkup(item)+pageMove;
- if(Inventory.isFlask(item))return potionSelectionMarkup(item,selected.from)+pageMove;
+ if(selected.from==='resource')return resourceSelectionMarkup(item);
+ if(Inventory.isFlask(item))return potionSelectionMarkup(item,selected.from);
  if(panel==='forge')return forgeItemMarkup(item,selected.from);
  const from=selected.from,ring=item.slot==='ring',target=ring?ringTarget:null,combat=e.mode==='playing';
  const handChoices=from==='bag'&&item.slot==='weapon'&&M.legalDualPair(c,c.equipment.weapon,item)?`<div class="ring-targets weapon-targets" role="group" aria-label="武器比較目標">${['weapon','offhand'].map(slot=>`<button data-weapon-target="${slot}" class="${weaponTarget===slot?'selected':''}" aria-pressed="${weaponTarget===slot}">${slot==='weapon'?'主手':'副手'}</button>`).join('')}</div>`:'';
@@ -1716,14 +1766,20 @@ function selectionMarkup(){
  const equipTarget=ring?target:item.slot==='weapon'?weaponTarget:null;
  const showEquip=phone&&from==='bag'&&!warnings.length;
  const canEquip=showEquip&&(!ring||!!target)&&M.equipRequirement(c,item,equipTarget).ok;
- const equipButton=showEquip?'<button class="gold-btn" data-inventory-action="equip" '+(canEquip?'':'disabled')+'>穿戴</button>':'';
+ const equipButton=showEquip?'<button class="gold-btn gear-quick-equip" data-inventory-action="equip" '+(canEquip?'':'disabled')+'>穿戴</button>':'';
+ const discard=panel==='inventory'&&combat&&from==='bag',confirmDiscard=discard&&gearDiscardPending===item.id;
+ const tabs=`<div role="group" aria-label="裝備詳情檢視">${[['rolls','詞條'],['facts','底材與效果']].map(([id,label])=>`<button type="button" data-gear-view="${id}" aria-pressed="${gearInspectorView===id}">${label}</button>`).join('')}</div>`;
+ const discardControls=confirmDiscard
+  ?'<div class="gear-discard-confirm"><button type="button" data-gear-discard="cancel">取消</button><button type="button" class="gear-discard-button" data-inventory-action="discard">確認銷毀</button></div>'
+  :tabs+equipButton+(discard?'<button type="button" class="gear-discard-button" data-gear-discard="begin">銷毀</button>':'');
  const warning=warnings.length?`<div class="weapon-swap-warning"><b>換裝後停用</b><ul>${warnings.map(name=>`<li>${esc(name)}</li>`).join('')}</ul><button class="outline-btn" data-inventory-action="confirm-equip">仍要換裝</button></div>`:'';
- return `<div class="gear-inspector"><div class="gear-inspector-tools"><div role="group" aria-label="裝備詳情檢視">${[['rolls','詞條'],['facts','底材與效果']].map(([id,label])=>`<button type="button" data-gear-view="${id}" aria-pressed="${gearInspectorView===id}">${label}</button>`).join('')}</div>${modalClose('data-clear-selection','關閉裝備詳情','sheet-close')}</div>
-  ${handChoices||actions||stashAction||pageMove||equipButton?`<div class="inventory-selection-actions">${handChoices}${actions}${equipButton}${stashAction}${pageMove}</div>`:''}
+ return `<div class="gear-inspector"><div class="gear-inspector-tools">${discardControls}${modalClose('data-clear-selection','關閉裝備詳情','sheet-close')}</div>
+  ${confirmDiscard&&item.sockets?.some(Boolean)?'<small class="gear-discard-sockets">已鑲嵌的寶石也會銷毀</small>':''}
+  ${handChoices||actions||stashAction?`<div class="inventory-selection-actions">${handChoices}${actions}${stashAction}</div>`:''}
  ${phone?warning:''}${inventoryDetails(item,from)}${phone?'':warning}</div>`;
 }
 
-function selectInventoryItem(id,from,preview=false){const item=inventoryItem(id,from);if(!item)return;const changed=inventorySelection?.id!==id||inventorySelection?.from!==from;inventoryPanelPinned=!preview;inventorySelection={id,from};if(changed){gearInspectorView='rolls';weaponTarget='weapon';valuableConsentID=null;ringTarget=item.slot==='ring'&&!c.equipment.ring_left?'ring_left':item.slot==='ring'&&!c.equipment.ring_right?'ring_right':null;workshopTab=forgeTab==='craft'?'craft':'sockets';craftSelection=null;}$$('[data-inventory-item]').forEach(el=>{const selected=el.dataset.inventoryItem===id&&el.dataset.inventoryFrom===from;el.classList.toggle('selected',selected);el.setAttribute('aria-pressed',String(selected));});$('#inventory-selection').classList.add('has-selection');$('#inventory-selection').innerHTML=selectionMarkup();if(changed)$('#inventory-selection').scrollTop=0;positionInventoryInspector({alignMobileSelection:!preview});if((panel==='forge'||panel==='merchant')&&innerWidth<=700)$('#inventory-selection').scrollIntoView({block:'start'});}
+function selectInventoryItem(id,from,preview=false){const item=inventoryItem(id,from);if(!item||panel==='inventory'&&inventoryDiscardBatch)return;const changed=inventorySelection?.id!==id||inventorySelection?.from!==from;inventoryPanelPinned=!preview;inventorySelection={id,from};if(changed){gearDiscardPending=null;gearInspectorView='rolls';weaponTarget='weapon';valuableConsentID=null;ringTarget=item.slot==='ring'&&!c.equipment.ring_left?'ring_left':item.slot==='ring'&&!c.equipment.ring_right?'ring_right':null;workshopTab=forgeTab==='craft'?'craft':'sockets';craftSelection=null;}$$('[data-inventory-item]').forEach(el=>{const selected=el.dataset.inventoryItem===id&&el.dataset.inventoryFrom===from;el.classList.toggle('selected',selected);el.setAttribute('aria-pressed',String(selected));});$('#inventory-selection').classList.add('has-selection');$('#inventory-selection').innerHTML=selectionMarkup();if(changed)$('#inventory-selection').scrollTop=0;positionInventoryInspector({alignMobileSelection:!preview});if((panel==='forge'||panel==='merchant')&&innerWidth<=700)$('#inventory-selection').scrollIntoView({block:'start'});}
 
 function filteredEquipmentBag(){const words=bagSearch.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);return c.bag.filter(item=>{if(!(['all','equipment'].includes(bagFilter)||bagFilter.startsWith('rarity:')&&item.rarity===Number(bagFilter.slice(7))||bagFilter.startsWith('armor:')&&armorClass(item)===bagFilter.slice(6)||bagFilter==='set'&&item.set||bagFilter==='rare'&&item.rarity>=3||(M.ITEM_SLOTS||M.SLOTS).includes(bagFilter)&&item.slot===bagFilter))return false;if(!words.length)return true;const text=[item.name,M.SLOT_NAMES[item.slot],M.RARITIES[item.rarity].name,item.weaponType?M.WEAPON_TYPES[item.weaponType]?.name:'',item.set?M.SETS[item.set]?.name:'',item.uniqueID?'獨特':'',ARMOR_WEIGHTS[armorClass(item)]?.name||'',item.grantedSkill?M.ABILITIES[item.grantedSkill]?.name:'',...M.itemAffixes(item).map(a=>M.AFFIXES[a.key]?.label||'')].join(' ').toLocaleLowerCase();return words.every(word=>text.includes(word));});}
 function heroPreviewMarkup(hero,extra=''){
@@ -1798,7 +1854,7 @@ function potionSelectionMarkup(item,from){
  const actions=`<div class="potion-detail-actions">${panel==='inventory'?targets:''}${transfer}<button class="text-btn" data-item-use="flasks" ${!camp||inStash?'disabled':''}>品質／詞條與出售</button></div>`;
  return `<div class="item-detail-toolbar">${modalClose('data-clear-selection','關閉藥水詳情','sheet-close')}</div><div class="potion-inventory-details">${phone?actions:''}${comparison}${phone?'':actions}${camp?'':'<p class="potion-combat-note">返回營地後可替換藥水。</p>'}</div>`;
 }
-function potionEquipmentMarkup(){return `<section class="potion-equipment" aria-label="配置藥水"><div><b>藥水</b><button class="text-btn" data-item-use="flasks" ${e.mode==='camp'?'':'disabled'}>管理</button></div><div class="potion-equipment-slots">${c.flaskItems.map((item,index)=>item?inventoryCell(item,'flask-equipped',index):`<button type="button" class="inventory-cell empty-equipment empty-potion" data-flask-equip="${index}" data-empty-flask-slot="${index}" aria-label="${FLASK_KEYS[index]}，未配置藥水">${icon('potion')}<kbd class="potion-shortcut">${FLASK_KEYS[index]}</kbd><small>空</small></button>`).join('')}</div></section>`;}
+function potionEquipmentMarkup(){return `<section class="potion-equipment" aria-label="配置藥水"><div><b>藥水</b></div><div class="potion-equipment-slots">${c.flaskItems.map((item,index)=>item?inventoryCell(item,'flask-equipped',index):`<button type="button" class="inventory-cell empty-equipment empty-potion" data-flask-equip="${index}" data-empty-flask-slot="${index}" aria-label="${FLASK_KEYS[index]}，未配置藥水">${icon('potion')}<kbd class="potion-shortcut">${FLASK_KEYS[index]}</kbd><small>空</small></button>`).join('')}</div></section>`;}
 function wornEquipmentMarkup(){
  const s=M.stats(c),cl=M.CLASSES[c.cls];
  return `<section class="paperdoll-pane worn-equipment"><div class="inventory-pane-title"><h3>穿戴裝備</h3><small>${M.STANCE_NAMES[M.dualState(c).mode]}</small></div>${panel==='inventory'?miniHeroPreviewMarkup():''}<div class="paperdoll" style="--class-color:${cl.color}">${M.SLOTS.map(slot=>{const item=c.equipment[slot];return `<div class="paperdoll-slot slot-${slot}"><span class="paperdoll-slot-label">${M.SLOT_NAMES[slot]}</span>${item?inventoryCell(item,'equipped',slot):`<button class="inventory-cell empty-equipment" data-equip-slot="${slot}" aria-label="${M.SLOT_NAMES[slot]}，尚未穿戴">${icon(slot==='weapon'?equipmentIcon({slot:'weapon'},STARTING_WEAPONS[c.cls]?.type):M.SLOT_ICONS[slot])}<small>${slot==='offhand'&&c.equipment.weapon&&M.weaponDefinition(c.equipment.weapon,c.cls).hands===2?(c.talents.b_titan_grip?'可雙持雙手劍':'雙手占用'):M.dualState(c).dual?'副手武器':'空'}</small></button>`}</div>`;}).join('')}</div><div class="paperdoll-stats"><div><small>${M.dualState(c).dual?'主手 / 副手':'攻擊'}</small><b>${M.dualState(c).dual?s.atk+' / '+s.offhandAtk:s.atk}</b></div><div><small>生命</small><b>${s.hp}</b></div><div><small>護甲</small><b>${Math.round(s.armor)}</b></div></div>${panel==='inventory'?potionEquipmentMarkup():''}</section>`;
@@ -1819,12 +1875,6 @@ function inventoryPageRenameMarkup({id,customName}){
  return `<form class="inventory-page-rename" data-inventory-page-rename="${id}" hidden><label>分頁名稱 <input name="pageName" type="text" autocomplete="off" maxlength="${InventoryPages.MAX_PAGE_NAME*2}" value="${esc(customName)}" placeholder="分頁 ${id}"></label><button type="submit" class="outline-btn">儲存</button><button type="button" data-cancel-inventory-page-rename class="text-btn">取消</button></form>`;
 }
 const movableBagSource=from=>['bag','flask-bag','resource'].includes(from);
-function inventoryPageMoveMarkup({id,from}){
- if(panel!=='inventory'||!movableBagSource(from))return '';
- const current=InventoryPages.pageForItem(c,id);
- const choices=InventoryPages.pages(c).filter(page=>page.id!==current).map(page=>`<option value="${page.id}">${esc(page.name)}</option>`);
- return `<label class="inventory-page-move">移到分頁 <select data-move-inventory-page="${esc(id)}" data-move-inventory-from="${from}"><option value="">選擇分頁</option>${choices.join('')}</select></label>`;
-}
 async function moveInventoryItemToPage(id,from,target){
  if(panel!=='inventory'||!movableBagSource(from)||InventoryPages.pageForItem(c,id)===target)return false;
  const destination=InventoryPages.pages(c).find(page=>page.id===target);
@@ -1838,10 +1888,72 @@ function setInventoryRenameVisible(visible){
  if(visible){const field=form.elements.pageName;field.focus();field.select();}
  else button.focus({preventScroll:true});
 }
+function inventoryBatchActionsMarkup(){
+ const batch=inventoryDiscardBatch;
+ if(!batch){
+  return e.mode==='playing'&&c.bag.length?'<button type="button" class="outline-btn" data-inventory-discard="start" aria-label="多選銷毀">多選</button>':'';
+ }
+ const count=batch.ids.size;
+ return `<button type="button" class="text-btn" data-inventory-discard="cancel">取消</button><button type="button" class="gear-discard-button" data-inventory-discard="${batch.confirming?'confirm':'review'}" ${count?'':'disabled'}>${batch.confirming?'確認銷毀':'銷毀'} ${count} 件</button>`;
+}
+function setInventoryDiscardMode(active){
+ if(active&&(panel!=='inventory'||e.mode!=='playing'||!c.bag.length))return;
+ closeInventoryInspector();lastInventoryTap=null;
+ inventoryDiscardBatch=active?{ids:new Set(),confirming:false}:null;
+ renderInventory();
+ const selector=active?'[data-inventory-discard="cancel"]':'[data-inventory-discard="start"]';
+ $(selector)?.focus({preventScroll:true});
+}
+function toggleInventoryDiscardItem(cell){
+ const batch=inventoryDiscardBatch,id=cell.dataset.inventoryItem;
+ const selected=!batch.ids.delete(id);
+ if(selected)batch.ids.add(id);
+ batch.confirming=false;
+ cell.classList.toggle('selected',selected);
+ cell.setAttribute('aria-pressed',String(selected));
+ $('.inventory-batch-actions').innerHTML=inventoryBatchActionsMarkup();
+}
+async function discardInventoryEquipment(ids){
+ if(panel!=='inventory'||e.mode!=='playing')return false;
+ const batch=inventoryDiscardBatch;
+ const changed=await commitInventory((hero,profile)=>{
+  if(!Inventory.discardBackpackGear(profile,hero.id,ids,e.mode))return false;
+  const checkpoint=profile.rifts?.activeRun?.checkpoint?.hero;
+  if(checkpoint?.id===hero.id)InventoryPages.pruneAssignments(checkpoint);
+  return true;
+ },'',null,{refresh:false});
+ if(changed){
+  gearDiscardPending=null;
+  if(batch&&inventoryDiscardBatch===batch)setInventoryDiscardMode(false);
+ }
+ return changed;
+}
 $('#dialog-body').addEventListener('click',event=>{
  if(panel!=='inventory')return;
+ const cell=event.target.closest('[data-inventory-item]');
+ if(cell&&inventoryDiscardBatch){
+  event.stopPropagation();
+  if(cell.dataset.inventoryFrom==='bag')toggleInventoryDiscardItem(cell);
+  return;
+ }
  if(event.target.closest('[data-rename-inventory-page]'))setInventoryRenameVisible(true);
  if(event.target.closest('[data-cancel-inventory-page-rename]'))setInventoryRenameVisible(false);
+ const single=event.target.closest('[data-gear-discard]')?.dataset.gearDiscard;
+ if(single){
+  gearDiscardPending=single==='begin'?inventorySelection?.id:null;
+  refreshSelection();
+  $(single==='begin'?'[data-gear-discard="cancel"]':'[data-gear-discard="begin"]')?.focus({preventScroll:true});
+  return;
+ }
+ const action=event.target.closest('[data-inventory-discard]')?.dataset.inventoryDiscard;
+ if(action==='start'||action==='cancel')setInventoryDiscardMode(action==='start');
+ const batch=inventoryDiscardBatch;
+ if(action==='review'&&batch?.ids.size){
+  batch.confirming=true;
+  $('.inventory-batch-actions').innerHTML=inventoryBatchActionsMarkup();
+  $('[data-inventory-discard="cancel"]')?.focus({preventScroll:true});
+ }
+ if(action==='confirm'&&batch?.confirming&&batch.ids.size)void discardInventoryEquipment(batch.ids);
 });
 $('#dialog-body').addEventListener('submit',async event=>{
  const form=event.target;
@@ -1852,13 +1964,6 @@ $('#dialog-body').addEventListener('submit',async event=>{
  if(await commitInventory(hero=>InventoryPages.renamePage(hero,id,name),'',inventorySelection,{refresh:false})){
   $('[data-rename-inventory-page]')?.focus({preventScroll:true});
  }
-});
-$('#dialog-body').addEventListener('change',async event=>{
- const field=event.target,{moveInventoryPage,moveInventoryFrom}=field.dataset;
- if(!moveInventoryPage||!field.value)return;
- const moved=await moveInventoryItemToPage(moveInventoryPage,moveInventoryFrom,Number(field.value));
- if(moved)$('[data-inventory-page][aria-pressed="true"]')?.focus({preventScroll:true});
- else if(field.isConnected)field.value='';
 });
 function renderInventory(){
  hideItemTooltip();clearInventoryDrag();
@@ -1873,7 +1978,7 @@ function renderInventory(){
   ...M.ITEM_SLOTS.map(slot=>[slot,M.SLOT_NAMES[slot]])
  ];
  const filters=filterOptions.map(([id,label])=>`<option value="${id}" ${bagFilter===id?'selected':''}>${label}</option>`).join('');
- $('#dialog-body').innerHTML=`<div class="inventory-view inventory-view-${inventoryTab}"><nav class="inventory-view-tabs" aria-label="行囊分頁">${[['bag','背包'],['wear','穿戴']].map(([id,label])=>'<button data-inventory-tab="'+id+'" class="'+(inventoryTab===id?'selected':'')+'" aria-pressed="'+(inventoryTab===id)+'">'+label+'</button>').join('')}</nav><div class="inventory-workbench"><div class="inventory-bag-column"><div class="inventory-topline"><div class="inventory-currencies">${currencyCountersMarkup(Inventory.currencies(state,c.id))}<span class="inventory-capacity">${bagCapacityLabel()}</span></div></div>${pickupFilterMarkup()}<section class="backpack-pane"><div class="inventory-page-header">${inventoryPagesMarkup(pages,groups,page)}<div class="inventory-pane-title"><h3>${icon('bag')}道具<b>${total}</b></h3><div class="inventory-page-actions"><button type="button" class="text-btn" data-rename-inventory-page aria-expanded="false">重新命名</button><button type="button" class="text-btn" data-inventory-sort>整理</button></div></div></div>${inventoryPageRenameMarkup(pages.find(tab=>tab.id===page))}<div class="backpack-toolbar"><select id="bag-filter" aria-label="篩選道具">${filters}</select><input id="bag-search" class="bag-search" type="search" autocomplete="off" value="${esc(bagSearch)}" placeholder="搜尋道具、詞條、用途" aria-label="搜尋背包道具"><span class="bag-match-count"${matchCount?'':' hidden'}>${matchCount}</span></div><p id="bag-search-empty" class="inventory-search-empty" role="status"${emptyText?'':' hidden'}>${emptyText}</p><div class="backpack-scroll"><div class="backpack-grid unified-item-grid" role="grid" aria-label="道具背包" data-bag-drop="">${cells}</div></div></section></div><div class="inventory-worn-column">${wornEquipmentMarkup()}</div></div><section id="inventory-selection" class="inventory-selection ${inventorySelection?'has-selection':''}" aria-live="polite">${selectionMarkup()}</section></div>`;
+ $('#dialog-body').innerHTML=`<div class="inventory-view inventory-view-${inventoryTab}${inventoryDiscardBatch?' inventory-discard-mode':''}"><nav class="inventory-view-tabs" aria-label="行囊分頁">${[['bag','背包'],['wear','穿戴']].map(([id,label])=>'<button data-inventory-tab="'+id+'" class="'+(inventoryTab===id?'selected':'')+'" aria-pressed="'+(inventoryTab===id)+'">'+label+'</button>').join('')}</nav><div class="inventory-workbench"><div class="inventory-bag-column"><div class="inventory-topline"><div class="inventory-currencies">${currencyCountersMarkup(Inventory.currencies(state,c.id))}<span class="inventory-capacity">${bagCapacityLabel()}</span></div></div>${pickupFilterMarkup()}<section class="backpack-pane"><div class="inventory-page-header">${inventoryPagesMarkup(pages,groups,page)}<div class="inventory-pane-title"><h3>${icon('bag')}道具<b>${total}</b></h3><div class="inventory-page-actions"><button type="button" class="text-btn" data-rename-inventory-page aria-expanded="false">重新命名</button><button type="button" class="text-btn" data-inventory-sort>整理</button></div></div></div>${inventoryPageRenameMarkup(pages.find(tab=>tab.id===page))}<div class="backpack-toolbar"><select id="bag-filter" aria-label="篩選道具">${filters}</select><input id="bag-search" class="bag-search" type="search" autocomplete="off" value="${esc(bagSearch)}" placeholder="搜尋道具、詞條、用途" aria-label="搜尋背包道具"><div class="inventory-batch-actions">${inventoryBatchActionsMarkup()}</div><span class="bag-match-count"${matchCount?'':' hidden'}>${matchCount}</span></div><p id="bag-search-empty" class="inventory-search-empty" role="status"${emptyText?'':' hidden'}>${emptyText}</p><div class="backpack-scroll"><div class="backpack-grid unified-item-grid" role="grid" aria-label="道具背包" data-bag-drop="">${cells}</div></div></section></div><div class="inventory-worn-column">${wornEquipmentMarkup()}</div></div><section id="inventory-selection" class="inventory-selection ${inventorySelection?'has-selection':''}" aria-live="polite">${selectionMarkup()}</section></div>`;
  const bag=$('.inventory-view .backpack-scroll');
  if(bag)bag.scrollTop=bagScroll;
  paintCharacterPreviews();
@@ -1896,6 +2001,7 @@ function inventoryAction(action,id=inventorySelection?.id,from=inventorySelectio
  if(action==='salvage-colors'){const preview=M.salvagePreview(c,c.sellRarities,includeValuable);if(!preview?.count)return false;return commitInventory(hero=>!!M.salvageByRarity(hero,hero.sellRarities,includeValuable),`已分解 ${preview.count} 件裝備，獲得 ${preview.shards} 碎晶。`,null);}
  if(action==='sell-colors'){const preview=M.salePreview(c,c.sellRarities,includeValuable);if(!preview?.count)return false;return commitInventory(hero=>!!M.sellByRarity(hero,hero.sellRarities,includeValuable),`已出售 ${preview.count} 件裝備，獲得 ${preview.gold} 金幣。`,null);}
  if(!item||from==='resource'||Inventory.isFlask(item))return false;
+ if(action==='discard')return from==='bag'&&gearDiscardPending===id&&discardInventoryEquipment([id]);
  if(['sell','salvage'].includes(action)&&from==='bag'&&valuableItem(item)&&valuableConsentID!==id){toast('請先勾選此件高價裝備的出售／分解確認。');return false;}if(action==='sell'&&from==='bag')return commitInventory(hero=>M.sell(hero,id),`已出售 ${item.name}，獲得 ${M.itemSellValue(item)} 金幣。`,null);
  if(action==='equip'&&from==='bag'){if(item.slot==='weapon'&&!slot&&inventorySelection?.id===id)slot=weaponTarget;if(item.slot==='ring'&&!slot){slot=inventorySelection?.id===id?ringTarget:null;if(!slot)slot=!c.equipment.ring_left?'ring_left':!c.equipment.ring_right?'ring_right':null;if(!slot){selectInventoryItem(id,from);toast('請先選擇左戒指或右戒指，查看比較後替換。');return false;}}const req=M.equipRequirement(c,item,slot);if(!req.ok){toast(req.reason);return false;}}
  if(action==='equip'&&from==='bag'){
@@ -1920,6 +2026,7 @@ function positionInventoryInspector({alignMobileSelection=false}={}){
  const sheet=$('#inventory-selection'),gear=!!sheet?.querySelector('.gear-inspector'),potion=!!sheet?.querySelector('.potion-inventory-details');
  const itemDetail=gear||potion;
  sheet?.classList.toggle('is-item-comparison',itemDetail);
+ sheet?.classList.toggle('is-gear-comparison',gear);
  const focused=dialog.open&&panel==='inventory'&&itemDetail&&!desktop&&!phone,wasFocused=dialog.classList.contains('inventory-detail-focus');
  if(focused!==wasFocused){
   const body=$('#dialog-body');
@@ -1974,7 +2081,7 @@ function positionInventoryInspector({alignMobileSelection=false}={}){
  }
 }
 function closeInventoryInspector(suppress=0,restoreFocus=false){
- clearTimeout(itemTooltipTimer);inventoryPanelPinned=false;
+ clearTimeout(itemTooltipTimer);inventoryPanelPinned=false;gearDiscardPending=null;
  const selected=inventorySelection;
  inventorySelection=null;
  if(suppress)inventoryHoverUntil=Date.now()+suppress;
@@ -1986,7 +2093,7 @@ function closeInventoryInspector(suppress=0,restoreFocus=false){
  }
 }
 function hideItemTooltip(){clearTimeout(itemTooltipTimer);}
-function showItemTooltip(cell){clearTimeout(itemTooltipTimer);if(!['inventory','stash'].includes(panel)||!fineInventoryPointer()||inventoryDrag||inventoryPanelPinned||Date.now()<inventoryHoverUntil)return;if(panel==='inventory'&&innerWidth<900&&['bag','equipped','flask-bag','flask-equipped'].includes(cell.dataset.inventoryFrom))return;const reveal=()=>{if(!cell.isConnected||inventoryDrag||inventoryPanelPinned||Date.now()<inventoryHoverUntil)return;const switching=inventorySelection&&(inventorySelection.id!==cell.dataset.inventoryItem||inventorySelection.from!==cell.dataset.inventoryFrom),settle=switching?260:120,idle=Date.now()-inventoryPointerMovedAt;if(idle<settle){itemTooltipTimer=setTimeout(reveal,settle-idle);return;}itemTooltipTimer=null;selectInventoryItem(cell.dataset.inventoryItem,cell.dataset.inventoryFrom,true);};itemTooltipTimer=setTimeout(reveal,160);}
+function showItemTooltip(cell){clearTimeout(itemTooltipTimer);if(!['inventory','stash'].includes(panel)||!fineInventoryPointer()||inventoryDiscardBatch||inventoryDrag||inventoryPanelPinned||Date.now()<inventoryHoverUntil)return;if(panel==='inventory'&&innerWidth<900&&['bag','equipped','flask-bag','flask-equipped'].includes(cell.dataset.inventoryFrom))return;const reveal=()=>{if(!cell.isConnected||inventoryDrag||inventoryPanelPinned||Date.now()<inventoryHoverUntil)return;const switching=inventorySelection&&(inventorySelection.id!==cell.dataset.inventoryItem||inventorySelection.from!==cell.dataset.inventoryFrom),settle=switching?260:120,idle=Date.now()-inventoryPointerMovedAt;if(idle<settle){itemTooltipTimer=setTimeout(reveal,settle-idle);return;}itemTooltipTimer=null;selectInventoryItem(cell.dataset.inventoryItem,cell.dataset.inventoryFrom,true);};itemTooltipTimer=setTimeout(reveal,160);}
 function suppressDragInspector(){inventoryClickUntil=Date.now()+500;inventoryHoverUntil=inventoryClickUntil;closeInventoryInspector();}
 function clearInventoryDrag(){inventoryDrag=null;dialog.classList.remove('inventory-dragging');dialog.querySelector('.inventory-drag-preview')?.remove();$$('.drop-compatible,.drop-hover,.drop-rejected,.drag-source,.drag-source-lifted').forEach(el=>el.classList.remove('drop-compatible','drop-hover','drop-rejected','drag-source','drag-source-lifted'));}
 function setInventoryDragPreview(event,cell){
@@ -2010,13 +2117,13 @@ function setInventoryDragPreview(event,cell){
  requestAnimationFrame(()=>preview.remove());
  return true;
 }
-function quickInventory(cell){if(cell.dataset.inventoryFrom==='resource'){selectInventoryItem(cell.dataset.inventoryItem,'resource');return;}if(Inventory.isFlask(inventoryItem(cell.dataset.inventoryItem,cell.dataset.inventoryFrom))){selectInventoryItem(cell.dataset.inventoryItem,cell.dataset.inventoryFrom);return;}inventoryAction(cell.dataset.inventoryFrom==='bag'?'equip':'unequip',cell.dataset.inventoryItem,cell.dataset.inventoryFrom);}
+function quickInventory(cell){if(inventoryDiscardBatch)return;if(cell.dataset.inventoryFrom==='resource'){selectInventoryItem(cell.dataset.inventoryItem,'resource');return;}if(Inventory.isFlask(inventoryItem(cell.dataset.inventoryItem,cell.dataset.inventoryFrom))){selectInventoryItem(cell.dataset.inventoryItem,cell.dataset.inventoryFrom);return;}inventoryAction(cell.dataset.inventoryFrom==='bag'?'equip':'unequip',cell.dataset.inventoryItem,cell.dataset.inventoryFrom);}
 // Keep the grid DOM intact on a single click, so a native double-click reaches the same cell.
 $('#dialog-body').addEventListener('dblclick',ev=>{const cell=ev.target.closest('[data-inventory-item]');if(panel==='inventory'&&cell&&Date.now()>inventoryClickUntil){ev.preventDefault();quickInventory(cell);}});
-$('#dialog-body').addEventListener('keydown',ev=>{const cell=ev.target.closest('[data-inventory-item]');if(cell&&panel==='inventory'&&ev.key==='Enter'&&!ev.repeat){ev.preventDefault();quickInventory(cell);}});
+$('#dialog-body').addEventListener('keydown',ev=>{const cell=ev.target.closest('[data-inventory-item]');if(cell&&panel==='inventory'&&!inventoryDiscardBatch&&ev.key==='Enter'&&!ev.repeat){ev.preventDefault();quickInventory(cell);}});
 $('#dialog-body').addEventListener('pointerdown',ev=>{if(ev.pointerType!=='touch')return;const cell=ev.target.closest('[data-inventory-item]');touchInventoryDown=cell?{id:cell.dataset.inventoryItem,from:cell.dataset.inventoryFrom,x:ev.clientX,y:ev.clientY}:null;});
 $('#dialog-body').addEventListener('pointercancel',()=>{touchInventoryDown=null;lastInventoryTap=null;});
-$('#dialog-body').addEventListener('pointerup',ev=>{if(ev.pointerType!=='touch'||panel!=='inventory')return;const cell=ev.target.closest('[data-inventory-item]'),down=touchInventoryDown;touchInventoryDown=null;if(!cell||!down||down.id!==cell.dataset.inventoryItem||Math.hypot(ev.clientX-down.x,ev.clientY-down.y)>12){lastInventoryTap=null;return;}const now=Date.now();if(lastInventoryTap?.id===down.id&&lastInventoryTap.from===down.from&&now-lastInventoryTap.time<360){inventoryClickUntil=now+450;lastInventoryTap=null;quickInventory(cell);}else lastInventoryTap={...down,time:now};});
+$('#dialog-body').addEventListener('pointerup',ev=>{if(ev.pointerType!=='touch'||panel!=='inventory'||inventoryDiscardBatch)return;const cell=ev.target.closest('[data-inventory-item]'),down=touchInventoryDown;touchInventoryDown=null;if(!cell||!down||down.id!==cell.dataset.inventoryItem||Math.hypot(ev.clientX-down.x,ev.clientY-down.y)>12){lastInventoryTap=null;return;}const now=Date.now();if(lastInventoryTap?.id===down.id&&lastInventoryTap.from===down.from&&now-lastInventoryTap.time<360){inventoryClickUntil=now+450;lastInventoryTap=null;quickInventory(cell);}else lastInventoryTap={...down,time:now};});
 dialog.addEventListener('pointermove',ev=>{if(ev.pointerType!=='touch')inventoryPointerMovedAt=Date.now();});
 dialog.addEventListener('pointerover',ev=>{if(ev.pointerType==='touch')return;if(ev.target.closest('#inventory-selection')){clearTimeout(itemTooltipTimer);return;}const cell=ev.target.closest('[data-inventory-item]');if(cell&&!cell.contains(ev.relatedTarget))showItemTooltip(cell);});
 dialog.addEventListener('pointerout',ev=>{const cell=ev.target.closest('[data-inventory-item]'),sheet=ev.target.closest('#inventory-selection');if(cell&&!cell.contains(ev.relatedTarget)){clearTimeout(itemTooltipTimer);inventoryPanelPinned=false;}if(sheet&&!sheet.contains(ev.relatedTarget))inventoryPanelPinned=false;});
@@ -2026,6 +2133,7 @@ dialog.addEventListener('keydown',ev=>{const cell=ev.target.closest('[data-inven
 dialog.addEventListener('cancel',ev=>{
  const focused=document.activeElement;
  if(composingBagSearches.has(focused)){ev.preventDefault();return;}
+ if(panel==='inventory'&&inventoryDiscardBatch){ev.preventDefault();setInventoryDiscardMode(false);return;}
  if(!['inventory','stash'].includes(panel)||!fineInventoryPointer()&&!dialog.classList.contains('inventory-detail-focus'))return;
  if(panel==='inventory'&&$('[data-inventory-page-rename]:not([hidden])')){
   ev.preventDefault();setInventoryRenameVisible(false);return;
@@ -2040,7 +2148,7 @@ dialog.addEventListener('cancel',ev=>{
 });
 dialog.addEventListener('scroll',ev=>{if(!ev.target.closest?.('#inventory-selection'))clearTimeout(itemTooltipTimer);},true);
 window.addEventListener('resize',positionInventoryInspector);
-dialog.addEventListener('close',()=>{if(!dialog.open){inventoryPanelPinned=false;dialog.classList.remove('inventory-detail-focus');clearTimeout(itemTooltipTimer);}});
+dialog.addEventListener('close',()=>{if(!dialog.open){inventoryPanelPinned=false;inventoryDiscardBatch=null;gearDiscardPending=null;dialog.classList.remove('inventory-detail-focus');clearTimeout(itemTooltipTimer);}});
 function inventoryDropTarget(element){
  if(element.closest('[data-filtered-slot]'))return null;
  if(panel==='inventory')return element.closest('[data-inventory-page],[data-flask-equip],[data-equip-slot],[data-bag-drop]');
@@ -2068,7 +2176,7 @@ $('#dialog-body').addEventListener('dragstart',ev=>{
  if(!cell||!ev.dataTransfer)return;
  const stash=panel==='stash';
  const from=cell.dataset.inventoryFrom,item=inventoryItem(cell.dataset.inventoryItem,from);
- if(!item||panel!=='inventory'&&!stash||stash&&e.mode!=='camp'||stash&&from==='resource'){ev.preventDefault();return;}
+ if(!item||panel==='inventory'&&inventoryDiscardBatch||panel!=='inventory'&&!stash||stash&&e.mode!=='camp'||stash&&from==='resource'){ev.preventDefault();return;}
  inventoryDrag={id:item.id,from,hero:c.id};
  lastInventoryTap=null;
  closeInventoryInspector();
@@ -2489,7 +2597,7 @@ function saleMarkup(){const rarities=c.sellRarities??[0,1],sale=M.salePreview(c,
 
 async function changeBuild(action,id){const candidate=profileCandidate(),hero=candidate.characters[c.id];if(!hero)return;if(action==='learn'){if(!M.learn(hero,id))return;}else if(!M.refund(hero)){toast('請先騰出背包或待領空間，才能收回副手並重置技能。');return;}try{prepareCandidate(candidate);await persistProfile(candidate);}catch{toast('技能加點未儲存，原技能與點數保留。');renderPanel();return;}state=candidate;c=state.characters[state.active];e.c=c;e.refresh();if(panel==='talents')refreshSkillAtlas();else renderPanel();updateCharacter();toast(action==='learn'?'技能點已投入，效果已更新。':'所有技能點已退還。');}
 
-function itemFormText(item){if(!['weapon','offhand'].includes(item.slot))return M.SLOT_NAMES[item.slot]+(armorClass(item)?' · '+ARMOR_WEIGHTS[armorClass(item)].name:'');const def=M.weaponDefinition(item,c.cls);return `${M.SLOT_NAMES[item.slot]} · ${def.name} · ${item.slot==='offhand'?'副手':def.hands===2?'雙手':'單手'}`;}
+function itemFormText(item,compact=false){if(!['weapon','offhand'].includes(item.slot))return M.SLOT_NAMES[item.slot]+(armorClass(item)?' · '+ARMOR_WEIGHTS[armorClass(item)].name:'');const def=M.weaponDefinition(item,c.cls);return `${compact?'':M.SLOT_NAMES[item.slot]+' · '}${def.name} · ${item.slot==='offhand'?'副手':def.hands===2?'雙手':'單手'}`;}
 function itemIcon(item){return equipmentIcon(item,STARTING_WEAPONS[c.cls]?.type);}
 function itemLevelText(item){const base=item.baseTier===undefined?'舊版底材':M.ITEM_BASES[item.baseTier]?.name||'底材',required=item.requiredLevel??1;return `${base} · 物品等級 ${item.level} · <span class="${c.level<required?'requirement-unmet':''}">需求 Lv.${required}</span>`;}
 function affixMarkup(a,item){const d=M.AFFIXES[a.key],tier=a.tier,range=M.affixRange(a.key,item.level,item,tier),format=value=>d.percent?Math.round(value*1000)/10+'%':value;return `<span class="affix-grade" style="--grade-color:${tier===1?'#e9c676':tier===2?'#ba9ad6':'#a5b69c'}" title="數值強度：T1 最強">T${tier}</span><span class="affix-value">${esc(M.affixText(a))}</span>${range?`<small class="affix-range">ilvl ${item.level} · T${tier} 可擲 ${format(range.min)}–${format(range.max)}</small>`:''}`;}
@@ -2569,55 +2677,13 @@ document.addEventListener('click',async event=>{
 });
 function leaveConnectedPanel(){
  if(panel==='verified'&&verifiedPanel){verifiedPanel.close();verifiedPanel.element.remove();}
- if(panel==='cloud')cloudPanel?.close();
 }
 async function restorePersonalProfile(restored){
- cloudPanel?.unlink();
  if(!restored.rifts?.activeRun)for(const hero of Object.values(restored.characters))restoreLegacyEquipment(hero);
  await persistProfile(restored,{replace:true});
  await refreshRecoveryBackups();
  bindCampProfile(restored);
  if(state.rifts?.activeRun&&await settleStoredPaidRun()==='locked')void settleStoredPaidRun({wait:true});
-}
-const canRestoreCloud=()=>storageReady&&e.mode==='camp'&&!state.rifts?.activeRun&&!storageTransactions&&!paidBusy;
-function renderCloud(){
- cloudPanel??=createCloudPanel({
-  client:cloud,canRestore:canRestoreCloud,
-  async readLocal(flush){
-   const parkedPaidRun=e.mode==='camp'&&state.rifts?.activeRun&&!paidLockOwned;
-   if(!storageReady||(flush&&!parkedPaidRun&&!await save(true)))throw Error('local save unavailable');
-   return profileStore.load();
-  },
-  async restoreLocal(profile){
-   const restored=M.importSave(JSON.stringify(profile));
-   if(!restored||!canRestoreCloud())throw Error('local restore unavailable');
-   await restorePersonalProfile(restored);
-  }
- });
- $('#dialog-body').replaceChildren(cloudPanel.element);
- cloudPanel.refresh();
-}
-function feedbackContext(){
- const version=document.querySelector('meta[name="emberfall-version"]')?.content||'';
- const coarse=matchMedia('(pointer:coarse)').matches;
- return {version,device:coarse?(Math.min(screen.width,screen.height)<600?'手機':'平板'):'電腦',
-  chapter:e.mode==='playing'&&!e.training?M.chapterDefinition(e.chapter||1).name:'',
-  difficulty:e.mode==='playing'&&!e.training?M.DIFFICULTIES[e.diff]?.name:''};
-}
-function renderFeedback(){
- feedbackPanel??=createFeedbackPanel({
-  getContext:feedbackContext,canSend:()=>!!cloud.account,
-  sendReport:cloud.enabled?report=>{
-   const details=report.context;
-   if(!details)return cloud.sendFeedback(report);
-   const device={電腦:'desktop',手機:'mobile',平板:'tablet'}[details.device]||'unknown';
-   const chapter=[1,2,3].find(n=>M.chapterDefinition(n).name===details.chapter);
-   const difficulty=[1,2,3].find(n=>M.DIFFICULTIES[n].name===details.difficulty);
-   return cloud.sendFeedback({...report,context:{version:details.version,device,chapter,difficulty}});
-  }:undefined
- });
- $('#dialog-body').replaceChildren(feedbackPanel.element);
- feedbackPanel.refresh();
 }
 function renderVerified(){
  const body=$('#dialog-body');
@@ -2639,7 +2705,9 @@ function renderVerified(){
  void verifiedPanel.open();
 }
 function renderSettings(){
- const links=`<div class="settings-links"><button type="button" class="outline-btn" data-panel="cloud">雲端存檔</button><button type="button" class="outline-btn" data-panel="feedback">回報問題</button>${cloud.verifiedEnabled?'<button type="button" class="gold-btn" data-panel="verified">公測遠征</button>':''}${location.protocol==='file:'?'':'<a class="outline-btn" href="./index.html" data-title-home>返回首頁</a>'}</div>`;
+ const verifiedLink=cloud.verifiedEnabled?'<button type="button" class="gold-btn" data-panel="verified">公測遠征</button>':'';
+ const homeLink=location.protocol==='file:'?'':'<a class="outline-btn" href="./index.html" data-title-home>返回首頁</a>';
+ const links=verifiedLink||homeLink?`<div class="settings-links">${verifiedLink}${homeLink}</div>`:'';
  const portable=!document.querySelector('script[src^="updates.js"]');
  const history=portable?'<details class="standalone-release-history"><summary>更新紀錄</summary><div class="release-history" id="standalone-release-history"></div></details>':'';
  $('#dialog-body').innerHTML=`${storageSummaryMarkup()}<section class="pointer-aim-setting"><label class="settings-toggle"><input type="checkbox" data-pointer-aim ${e.pointerAimEnabled?'checked':''}><span><b>朝滑鼠位置施放</b><small>普攻與技能朝游標，範圍技能指定落點；關閉時自動索敵，手機維持自動索敵。</small></span></label></section><section class="audio-settings" aria-label="音效">

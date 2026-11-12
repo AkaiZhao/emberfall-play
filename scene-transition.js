@@ -1,6 +1,3 @@
-import {chapterDefinition} from './chapter-data.js?v=108';
-import {routeNode} from './route-model.js?v=140';
-
 const chapterThemes=['ember','tide','star'];
 
 function themeFor(game){
@@ -15,8 +12,7 @@ function ease(progress){
 }
 
 export function createSceneTransition(overlay){
- const veil=overlay.querySelector('.travel-veil'),cue=overlay.querySelector('.travel-cue');
- const area=overlay.querySelector('#travel-area'),title=overlay.querySelector('#travel-name');
+ const veil=overlay.querySelector('.travel-veil');
  let lastProgress=-1;
 
  function clear(){
@@ -34,19 +30,13 @@ export function createSceneTransition(overlay){
   const ink=ease(edge/.4);
   veil.style.opacity=ink;
   veil.style.setProperty('--travel-ink-progress',ink);
-  cue.style.opacity=ease(edge/.14);
  }
 
  function start(game){
-  const {expedition,transition,runContext}=game,theme=themeFor(game);
-  const node=routeNode(expedition.graph,expedition.selectedID??expedition.currentID);
-  const region=theme==='rift'?(runContext.kind==='rift'?'裂隙':'終局'):chapterDefinition(game.chapter)?.name||'遠征';
-  area.textContent=region+' · 第 '+((node?.layer??transition.to)+1)+' 層';
-  title.textContent=node?.name||'下一區域';
-  overlay.dataset.theme=theme;
+  overlay.dataset.theme=themeFor(game);
   overlay.dataset.phase='travel';
   lastProgress=-1;
-  frame(transition);
+  frame(game.transition);
   overlay.classList.remove('hidden');
  }
 

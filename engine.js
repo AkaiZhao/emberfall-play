@@ -133,6 +133,7 @@ export class Game{
  reset(restore=false){
   this.terrain=null;this.objectives=[];this.worldObjects=new WorldObjects(this);
   this.hitFeedback=new CombatHitFeedback();
+  this.bagFullNotified=false;
   const survivors=!restore&&this._summonHero===this.c.id?(this.summons||[]).filter(a=>a.hp>0).map(a=>({skill:a.source,hp:a.hp})):(this.c.summonState||[]);this._summonHero=this.c.id;reconcileSkillLoadouts(this.c);
   this._abilityCache=new Map();this.baseS=stats(this.c);this.refreshEquipmentTriggers();this.bossManaCD=0;this.buffs=[];this.skillEffects=[];this.auraIds=new Set();this.auraTimers={};this.auraIntervals={};this.transition=null;this.shrines=[];this.enemyFields=[];this.playerSlow=1;this._shrineStamp='';this.summons=[];this.summonCD=0;this.armyPlan=summonPlan(this.c);this.skillCooldowns={};this.triggerCooldowns={};this.processingTrigger=false;this.manaLeechAllowance=manaSiphonBudget(this.baseS);this.passiveLeechAllowance=this.baseS.hp*.1;this.cooldowns=[0,0,0];this.dodgeCD=0;this.channel=null;this.autoCastCD=0;this.noManaNotice=0;this.s={...this.baseS};this.setCombat=new SetCombat(this);this.minionCombat=new MinionCombat(this);this.rangerCombat=new RangerCombat(this);this.ringCombat=new RingCombat(this);this.lootFloor=null;this.expedition=new Expedition(this);this.horde=new HordeTrial(this);this.expeditionRisk=new ExpeditionRisk(this);this.chapterCombat=new ChapterCombat(this);this.enemyCombat=new EnemyCombat(this);this.endgameCombat=new EndgameCombat(this);this.applyBuffs();this.hp=this.s.hp;this.mana=this.s.mana;
   this.refreshFlaskBelt();this._dropHero=this.c.id;this.player={x:560,y:560,angle:-Math.PI/2};this.moveTarget=null;this.enemies=[];this.bullets=[];this.effects=[];this.drops=(this.c.groundLoot||[]).map(item=>({item,x:560,y:650,t:0}));this.numbers=[];this.hazards=[];this.attackCD=0;this.invuln=0;this.dashTime=0;this.dashCue=null;this.elapsed=0;this.runKills=0;this.runGold=0;this.runLoot=0;this.wave=0;this.cleared=false;this.waveWait=0;this.shake=0;this.bossRage=false;this.eventTimer=5;this.bossAdds=9;this.encounter={name:'營地整備',desc:'普攻起步，打造自己的技能組。'};
@@ -157,8 +158,8 @@ export class Game{
  damagePreview(def,options={}){const minion=options.minion??!!def.summon,coefficient=minion?(def.summon?.attackMult??def.damage??0):def.damage||0,more=minion||options.dot?1:def.id==='w_whirl'?this.s.whirl:def.id==='m_meteor'?this.s.meteor:def.id==='r_snipe'?this.s.snipe:1;const base=minion?(this.s.summonAttackBase||this.s.atk):this.s.atk;return outgoingDamage(this.s,base*coefficient*more,{...def,skill:!minion,minion,...options});}
  refresh(){reconcileSkillLoadouts(this.c);this._abilityCache=new Map();this.baseS=stats(this.c);this.refreshEquipmentTriggers();this.armyPlan=summonPlan(this.c);this.setCombat.refresh();this.minionCombat.refresh();this.rangerCombat.refresh();this.reconcileSkills();this.applyBuffs();this.ringCombat.reconcile();this.hp=Math.min(this.s.hp,this.hp);this.mana=Math.min(this.s.mana,this.mana);this.manaLeechAllowance=Math.min(this.manaLeechAllowance,manaSiphonBudget(this.s));this.passiveLeechAllowance=Math.min(this.passiveLeechAllowance??this.s.hp*.1,this.s.hp*.1);this.syncCooldowns();this.refreshLootFloor();if(this.training)this.resetTraining();}
  syncCooldowns(){this.cooldowns=skillLoadout(this.c).map(id=>id?this.skillCooldowns[id]||0:0);}
- start(diff=1,seed=null,{chapter=1,context=null}={}){if(!canChapter(this.c,diff,chapter))return false;if(this.drops?.length&&!this.collectAll())return false;this.worldObjects?.collectAll();this.chapter=chapter;this.runContext=context;this.restoreTrainingArmy();this.diff=diff;this.room=0;this.paused=false;this.mode='playing';this.reset();this._expeditionSeq=(this._expeditionSeq??0)+1;this.expedition.start(seed??`${this.now()}:${this._expeditionSeq}:${Math.floor(this.rand()*4294967296)}`,chapter);this.enterRoom();this.emit('start');return true;}
- camp(restore=false){if(this._dropHero===this.c.id&&this.drops?.length&&!this.collectAll()&&this.drops.some(drop=>!this.c.groundLoot?.some(item=>item.id===drop.item.id)))return false;this.worldObjects?.collectAll();this.restoreTrainingArmy();this.mode='camp';this.reset(restore);this.persistSummons();this.room=0;this.emit('camp');}
+ start(diff=1,seed=null,{chapter=1,context=null}={}){if(!canChapter(this.c,diff,chapter))return false;this.leaveRoomLoot();this.chapter=chapter;this.runContext=context;this.restoreTrainingArmy();this.diff=diff;this.room=0;this.paused=false;this.mode='playing';this.reset();this._expeditionSeq=(this._expeditionSeq??0)+1;this.expedition.start(seed??`${this.now()}:${this._expeditionSeq}:${Math.floor(this.rand()*4294967296)}`,chapter);this.enterRoom();this.emit('start');return true;}
+ camp(restore=false){this.collectAll();this.restoreTrainingArmy();this.mode='camp';this.reset(restore);this.persistSummons();this.room=0;this.emit('camp');}
  currentRoom(){return this.expedition.currentRoom();}
  worldBounds(){return terrainBounds(this.terrain);}
  clampWorldPoint(x,y,inset=0){const b=this.worldBounds();return nearestGround(this.terrain,clamp(x,b.left+inset,b.right-inset),clamp(y,b.top+inset,b.bottom-inset));}
@@ -179,13 +180,14 @@ export class Game{
  }
  routeChoices(){return this.expedition.choices();}
  enterRoom(){
-  const expedition=this.expedition,id=expedition.selectedID??expedition.currentID;if(this.training||!expedition.graph||expedition.enteredNodes.has(id)||this.transition&&!this.transition.entered)return false;if(this.drops.length&&!this.collectAll())return false;
+  const expedition=this.expedition,id=expedition.selectedID??expedition.currentID;if(this.training||!expedition.graph||expedition.enteredNodes.has(id)||this.transition&&!this.transition.entered)return false;
+  if(expedition.enteredNodes.size)this.leaveRoomLoot();
   this.hitFeedback.clear();
-  this.ringCombat.clear();this.player.x=560;this.player.y=650;this.enemies=[];this.bullets=[];this.hazards=[];this.effects=[];this.drops=[];this.numbers=[];this.enemyFields=[];this.playerSlow=1;this.shrines=[];for(let i=0;i<this.summons.length;i++){const a=this.summons[i];a.x=560+(i%5-2)*38;a.y=610-Math.floor(i/5)*38;}if(!expedition.enterRoom())return false;this.worldObjects.enterRoom();this.emit('room');return true;
+  this.ringCombat.clear();this.player.x=560;this.player.y=650;this.enemies=[];this.bullets=[];this.hazards=[];this.effects=[];this.numbers=[];this.enemyFields=[];this.playerSlow=1;this.shrines=[];for(let i=0;i<this.summons.length;i++){const a=this.summons[i];a.x=560+(i%5-2)*38;a.y=610-Math.floor(i/5)*38;}if(!expedition.enterRoom())return false;this.worldObjects.enterRoom();this.emit('room');return true;
  }
  nextRoom(id=null){
   if(this.training||this.mode!=='playing'||!this.cleared||this.room>=ROOMS.length-1||this.transition||this.expedition.selectedID)return false;
-  if(!id){this.emit('routeChoice');return false;}if(!this.routeChoices().some(node=>node.id===id))return false;if(!this.collectAll())return false;
+  if(!id){this.emit('routeChoice');return false;}if(!this.routeChoices().some(node=>node.id===id))return false;
   const choice=this.expedition.choose(id);if(!choice.ok)return false;this.transition={t:.72,max:.72,from:this.room,to:choice.to,entered:false};this.emit('transition');return true;
  }
  nearbyShrine(){return this.shrines?.find(shrine=>!shrine.used&&dist(this.player,shrine)<=90)||null;}
@@ -369,21 +371,32 @@ export class Game{
   this.drops.push(drop);
   if(drop.item.rarity>=4)this.onSound?.('drop',drop.item);
  }
- pickup(drop){
+ pickup(drop,notify=true){
   if(this._dropHero!==this.c.id||!this.drops.includes(drop))return false;
   if(!pickupAllowed(this.c,drop.item)&&!this.c.groundLoot?.some(item=>item.id===drop.item.id)){this.drops=this.drops.filter(d=>d!==drop);return true;}
-  if(this.c.bag.length<150){this.removeGround(drop.item);this.c.bag.push(drop.item);this.runLoot++;this.emit('loot',drop.item);}
-  else if(this.protectedLoot(drop.item)){
-   this.preserveGround(drop.item);
-   if(!drop.warned){drop.warned=true;this.emit('lootBlocked',{item:drop.item});}
+  if(this.c.bag.length>=150){
+   if(this.protectedLoot(drop.item))this.preserveGround(drop.item);
+   if(notify&&!this.bagFullNotified){this.bagFullNotified=true;this.emit('bagfull');}
    return false;
-  }else{this.emit('bagfull');}
-  this.drops=this.drops.filter(d=>d!==drop);return true;
+  }
+  this.bagFullNotified=false;
+  this.removeGround(drop.item);
+  this.drops=this.drops.filter(d=>d!==drop);
+  this.c.bag.push(drop.item);this.runLoot++;this.emit('loot',drop.item);
+  return true;
  }
  protectedLoot(item){return item.rarity>=3||item.set||item.uniqueID||item.grantedSkill||item.locked||(item.upgrade||0)>0||item.sockets?.some(Boolean);}
  preserveGround(item){this.c.groundLoot??=[];if(!this.c.groundLoot.some(i=>i.id===item.id)&&this.c.groundLoot.length<150)this.c.groundLoot.push(item);}
  removeGround(item){this.c.groundLoot=(this.c.groundLoot||[]).filter(i=>i.id!==item.id);}
- collectAll(){this.worldObjects?.collectAll();for(const d of [...this.drops])this.pickup(d);return this.drops.length===0;}
+ collectAll(){this.worldObjects?.collectAll();for(const d of [...this.drops])this.pickup(d,false);return this.drops.length===0;}
+ leaveRoomLoot(){
+  this.collectAll();
+  if(this._dropHero===this.c.id&&this.c.groundLoot?.length){
+   const leftBehind=new Set(this.drops.map(drop=>drop.item.id));
+   this.c.groundLoot=this.c.groundLoot.filter(item=>!leftBehind.has(item.id));
+  }
+  this.drops=[];this.bagFullNotified=false;
+ }
  beginLootWave(){this.lootFloor={drop:Math.max(0,this.baseS.drop||0),rarityFind:Math.max(0,this.baseS.rarityFind||0)};}
  refreshLootFloor(){if(!this.lootFloor)return;for(const key of ['drop','rarityFind'])this.lootFloor[key]=Math.min(this.lootFloor[key],Math.max(0,this.baseS[key]||0));}
  lootStats(){const out={...this.s};for(const key of ['drop','rarityFind'])out[key]=(this.lootFloor?.[key]??this.baseS[key]??0)+Math.max(0,(this.s[key]||0)-(this.baseS[key]||0));if(this.expedition?.graph&&!this.training)Object.assign(out,this.expedition.roomLoot());if(this.runContext?.kind==='endgame'&&this.runContext.riskVersion!==1){const risk=Math.min(3,this.runContext.challenge||1)-1;out.roomRarityBonus=(out.roomRarityBonus||0)+risk*.05;out.roomLootMultiplier=Math.min(1.4,(out.roomLootMultiplier||1)*(1+risk*.1));}return this.expeditionRisk?.lootStats(out)??out;}
