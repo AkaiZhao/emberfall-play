@@ -60,6 +60,13 @@ body.mobile-phone{--phone-left:max(12px,env(safe-area-inset-left));--phone-right
  body.mobile-phone .experience-strip>span{display:none}
  body.mobile-phone .player-status-hud{left:var(--phone-left);top:calc(var(--phone-top) + 65px);width:218px;max-width:calc(100% - 260px);gap:4px;pointer-events:none}
  body.mobile-phone .arena.in-camp .player-status-hud{top:var(--phone-top);max-width:min(218px,31vw)}
+ body.mobile-phone .player-status-hud .player-status-list{gap:3px}
+ body.mobile-phone .player-status-hud .player-status-badge{width:20px;height:20px;padding:1px}
+ body.mobile-phone .player-status-hud .player-status-badge .status-icon svg{width:12px;height:12px}
+ body.mobile-phone .player-status-hud .player-status-badge.has-status-time{padding-bottom:7px}
+ body.mobile-phone .player-status-hud .player-status-badge.has-status-time .status-icon svg{width:10px;height:10px}
+ body.mobile-phone .player-status-hud .player-status-badge .status-time{bottom:1px;font-size:7px}
+ body.mobile-phone .player-status-hud .player-status-badge .status-stacks{top:0;right:0;min-width:0;padding:0 1px;font-size:7px;line-height:8px}
  body.mobile-phone .route-hud{font-size:10px}
  body.mobile-phone .player-status-hud .quest-tracker{max-width:220px}
  body.mobile-phone .player-status-hud .quest-tracker b{max-width:180px;font-size:10px}
