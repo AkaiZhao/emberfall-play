@@ -18,7 +18,7 @@ export const ROOM_TYPES={
  welfare:{label:'福利',color:'#a3c99a',icon:'heart',desc:'本房敵人血量／傷害 65%；掉落 ×1.35、稀有度 +20%。之後 2 個戰鬥房間敵人生命 +16%、傷害 +10%；回復房不計次。',lootMultiplier:1.35,rarityBonus:.2},
  mystery:{label:'秘室',color:'#b6a0d2',icon:'eye',desc:'未知風險：進入後揭露本房恩惠，或之後 2 個戰鬥房間的追咒。',lootMultiplier:1,rarityBonus:0},
  recovery:{label:'回復',color:'#91c8c9',icon:'flask',desc:'補滿血魔與藥水；兩個狀態祭壇選一。',lootMultiplier:1,rarityBonus:0},
- treasure:{label:'寶庫',color:'#e4c16e',icon:'chest',desc:'1 波守衛；寶箱必給藍裝以上 1 件與材料。',lootMultiplier:1,rarityBonus:0},
+ treasure:{label:'寶庫',color:'#e4c16e',icon:'chest',desc:'1 波守衛；最後一名守衛掉落 1 件藍裝以上，清房後獲得材料。',lootMultiplier:1,rarityBonus:0},
  trial:{label:'試煉',color:'#c79cd5',icon:'rune',desc:'3 波危險敵群；傷害 ×1.25、血量 ×1.15、掉落 ×1.4、稀有度 +25%。',lootMultiplier:1.4,rarityBonus:.25},
  boss:{label:'最終首領',color:'#e08d60',icon:'flame',desc:'黃裝以上 1 件與 2 次額外抽選；獲得君王印記。',lootMultiplier:1,rarityBonus:0}
 };

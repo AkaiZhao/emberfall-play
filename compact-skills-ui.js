@@ -1,4 +1,4 @@
-import * as M from './model.js?v=135';
+import * as M from './model.js?v=140';
 import * as B from './basic-attacks.js?v=129';
 import {skillWeaponCompatible} from './skill-weapon-rules.js?v=129';
 import {ACTIVE_SKILL_LABELS,DODGE_LABEL} from './scene-input.js?v=108';

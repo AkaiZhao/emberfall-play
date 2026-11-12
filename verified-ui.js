@@ -1,4 +1,4 @@
-import * as M from './model.js?v=135';
+import * as M from './model.js?v=140';
 import { watchBplusImages, bplusAsset } from './bplus-art.js?v=124';
 import { drawBplusHero } from './bplus-hero.js?v=124';
 import { drawAnimePickup, drawAnimeProp, drawAnimeUnit } from './anime-art.js?v=125';

@@ -14,8 +14,8 @@ import {STARTING_WEAPONS,EQUIPMENT_ICONS,FLASK_ICONS} from './equipment-visuals.
 import {EARLY_UNIQUES,NEW_UNIQUES} from './unique-design.js?v=108';
 import {dualState,legalDualPair,classWeaponAllowed,stanceSkillInfo,STANCE_NAMES} from './weapon-stance.js?v=108';
 export {dualState,legalDualPair,classWeaponAllowed,stanceSkillInfo,STANCE_NAMES};
-import * as RiftModel from './rift-model.js?v=130';
-export {riftPreview,createRiftCandidate,craftTicket,closeRunCandidate,RIFT_THEMES,GEAR_FAMILIES,awardRepeatFragment} from './rift-model.js?v=130';
+import * as RiftModel from './rift-model.js?v=140';
+export {riftPreview,createRiftCandidate,craftTicket,closeRunCandidate,RIFT_THEMES,GEAR_FAMILIES,awardRepeatFragment} from './rift-model.js?v=140';
 import * as CampaignProgress from './campaign-progress.js?v=108';
 import {normalizeCampaignCheckpoints} from './campaign-checkpoint.js?v=108';
 import {FLASK_SLOT_COUNT,LEGACY_FLASK_SLOT_COUNT,isFlaskSlot,migrateFlaskCheckpoint} from './flask-belt.js?v=108';
@@ -30,7 +30,7 @@ import * as Campaign from './campaign-rules.js?v=108';
 import * as Progression from './progression.js?v=108';
 import * as PassiveTree from './passive-tree.js?v=108';
 import * as RingTree from './ring-tree.js?v=133';
-import * as Routes from './route-model.js?v=130';
+import * as Routes from './route-model.js?v=140';
 import * as GearRules from './equipment-rules.js?v=108';
 import {BOW_SKILLS} from './bow-skills.js?v=123';
 import {requiredSkillWeapon,skillWeaponCompatible,skillWeaponFailure} from './skill-weapon-rules.js?v=129';
@@ -1699,13 +1699,13 @@ export function claimAchievements(profile,heroID,ids){
  return {ok:true,count:ids.length};
 }
 
-export function settlePaidRun(profile,outcome='abandoned'){
- const result=RiftModel.closeRunCandidate(profile,outcome);if(!result.ok)return result;const {run,profile:p}=result,items=[];
- if(outcome==='won'){
-  const c=p.characters[run.heroId],rand=RiftModel.seededRng(run.seed+':settlement'),count=run.kind==='final'?4:run.theme==='vault'||run.theme==='royal'?3:2,lootStats={...stats(c),roomRarityBonus:run.riskVersion===1?Math.min(.07,(run.modifiers?.length||0)*.015):(run.challenge-1)*.05},family=RiftModel.GEAR_FAMILIES[run.target];
-  const context=RiftModel.runContext(run),band=lootLevelBand(run.difficulty,3,run.chapterTier,context);
-  for(let n=0;n<count;n++){
-   const level=Campaign.rollBandLevel(band,run.kind==='rift'?'boss':'normal',rand);
+export function paidBossEquipment(c,run){
+ const kind=run.final?'final':run.kind,chapter=run.chapterTier??run.chapter,context=run.chapterTier?RiftModel.runContext(run):run;
+ const rand=RiftModel.seededRng(run.seed+':settlement'),count=kind==='final'?4:run.theme==='vault'||run.theme==='royal'?3:2;
+ const lootStats={...stats(c),roomRarityBonus:run.riskVersion===1?Math.min(.07,(run.modifiers?.length||0)*.015):(run.challenge-1)*.05};
+ const family=RiftModel.GEAR_FAMILIES[run.target],band=lootLevelBand(run.difficulty,3,chapter,context),items=[];
+ for(let n=0;n<count;n++){
+   const level=Campaign.rollBandLevel(band,kind==='rift'?'boss':'normal',rand);
    let item=makeItem(c,run.difficulty,rand,{level,source:'boss',minimumRarity:2,lootStats,dropBand:band});
    if(family&&item.rarity>=4&&rand()<.55){
     if(run.targetType==='unique')item=rollUnique(band,rand,family.uniques)??item;
@@ -1714,7 +1714,19 @@ export function settlePaidRun(profile,outcome='abandoned'){
      if(ids.length)item=makeItem(c,run.difficulty,rand,{level,rarity:item.rarity,setID:ids[Math.floor(rand()*ids.length)]});
     }
    }
-   if(c.bag.length<150)c.bag.push(item);else if(c.pendingLoot.length<150)c.pendingLoot.push(item);else return {ok:false,reason:'請先騰出獎勵位置。'};recordEquipmentDiscovery(p,item);items.push(item);
+   items.push(item);
+ }
+ return items;
+}
+
+export function settlePaidRun(profile,outcome='abandoned'){
+ const result=RiftModel.closeRunCandidate(profile,outcome);if(!result.ok)return result;const {run,profile:p}=result;
+ const items=outcome==='won'&&!run.bossEquipment?paidBossEquipment(p.characters[run.heroId],run):[];
+ if(outcome==='won'){
+  const c=p.characters[run.heroId];
+  for(const item of items){
+   if(c.bag.length<150)c.bag.push(item);else if(c.pendingLoot.length<150)c.pendingLoot.push(item);else return {ok:false,reason:'請先騰出背包空間。'};
+   recordEquipmentDiscovery(p,item);
   }
   const amount=run.theme==='forge'?6:run.kind==='final'?8:2;
   if(!addResourceLoot(p,{materials:[{key:'enhance',count:amount},{key:'reforge',count:run.theme==='forge'?3:1}],gems:run.theme==='royal'?[{key:'clarity',tier:3,count:1}]:[]}))return {ok:false,reason:'共享材料已達上限。'};

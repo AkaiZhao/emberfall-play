@@ -1,6 +1,4 @@
-import {pickupAllowed} from './pickup-filter.js?v=108';
-import {seededRng} from './rift-model.js?v=130';
-import {rollItemDrop,dropChance} from './model.js?v=135';
+import {seededRng} from './rift-model.js?v=140';
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 export class WorldObjects{
  constructor(g){this.g=g;this.props=[];this.pickups=[];this.roomKey=null;}
@@ -25,10 +23,6 @@ export class WorldObjects{
   const g=this.g;if(p.used)return false;p.used=true;p.hp=0;const chest=p.kind==='chest',rand=this.rand??g.rand;
   this.rand??=rand;this.drop('gold',chest?(5+Math.floor(rand()*8)+g.room*2)*g.diff:(1+Math.floor(rand()*3)+Math.floor(g.room/3))*g.diff,p);
   if(rand()<.55)this.drop(rand()<.65?'flask':'mana',chest?12:7,p);
-  if(rand()<dropChance(g.lootStats(),chest?.16:.025)){
-   const item=rollItemDrop(g.c,g.diff,rand,{room:g.room,chapter:g.chapter||1,context:g.runContext,source:'chest',lootStats:g.lootStats()});
-   if(item&&pickupAllowed(g.c,item)){g.preserveGround(item);g.addGroundDrop(g.placeActor({item,t:0},p.x,p.y));}
-  }
   g.fx(p.x,p.y,chest?42:28,chest?'#dfbc68':'#aa916c','burst',.35);g.emit('worldLoot',{kind:p.kind});return true;
  }
  take(p){const g=this.g;if(p.kind==='gold'){g.c.gold+=p.amount;g.runGold+=p.amount;g.float(p.x,p.y-18,'+'+p.amount+' 金','#e1c677');}else if(p.kind==='flask'){g.refillFlasks(p.amount);g.float(p.x,p.y-18,'藥水充能 +'+p.amount,'#a8dda7');}else if(p.kind==='mana'){g.mana=Math.min(g.s.mana,g.mana+g.s.mana*p.amount/100);g.float(p.x,p.y-18,'魔力恢復','#93cce8');}g.emit('worldPickup',{kind:p.kind});}

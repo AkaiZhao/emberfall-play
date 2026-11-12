@@ -148,11 +148,12 @@ function shellMarkup(tree,doc){
 }
 
 export function mountRingTree(container,{
- tree,hero,budget,stateFor,stage,invest,reset,inspectSkill,skillDetails,formatModifier,canReset,resetHint=''
+ tree,hero,budget,stateFor,stage,invest,reset,inspectSkill,skillDetails,formatModifier,canReset,resetHint='',toolbarAnchor
 }){
  container.innerHTML = shellMarkup(tree,container.ownerDocument);
  const panel = container.firstElementChild;
- const find = selector => panel.querySelector(selector);
+ const toolbar = panel.querySelector('.ring-tree-toolbar');
+ const find = selector => panel.querySelector(selector)||toolbar.querySelector(selector);
  const viewport = find('.ring-tree-viewport'), world = find('.ring-tree-world');
  const zoomOutput = find('.ring-tree-zoom'), pointsOutput = find('.ring-tree-points b');
  const search = find('input'), results = find('.ring-tree-results'), resultList = find('.ring-tree-result-list');
@@ -559,15 +560,20 @@ export function mountRingTree(container,{
   zoomAt(view.scale*Math.exp(clamp(-delta,-180,180)*.003),x,y);
  },{passive:false});
 
- listen(panel,'pointerdown',event=>{
+ const eventRoot=toolbarAnchor?.closest('dialog')||panel;
+ if(toolbarAnchor){
+  toolbar.classList.add('ring-tree','ring-tree-toolbar-docked');
+  toolbarAnchor.before(toolbar);
+ }
+ listen(eventRoot,'pointerdown',event=>{
   if(!event.target.closest('.ring-tree-find'))results.hidden = true;
  });
- listen(panel,'focusout',event=>{
+ listen(eventRoot,'focusout',event=>{
   if(event.target.closest('.ring-tree-find')&&!event.relatedTarget?.closest('.ring-tree-find'))results.hidden = true;
  });
  listen(search,'focus',searchMatches);
  listen(search,'input',searchMatches);
- listen(panel,'keydown',event=>{
+ listen(eventRoot,'keydown',event=>{
   if(event.target.closest('.ring-tree-find')){
    if(event.key==='Escape'&&(!results.hidden||search.value)){
     event.preventDefault();
@@ -598,7 +604,7 @@ export function mountRingTree(container,{
    goHome(true);
   }
  });
- listen(panel,'click',event=>{
+ listen(eventRoot,'click',event=>{
   const button = event.target.closest('button');
   if(!button||button.getAttribute('aria-disabled')==='true')return;
   const {ringNode,ringResult,ringAction} = button.dataset;
@@ -660,6 +666,7 @@ export function mountRingTree(container,{
    observer.disconnect();
    listeners.abort();
    pointers.clear();
+   toolbar.remove();
    panel.remove();
   }
  };

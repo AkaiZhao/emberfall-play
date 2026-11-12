@@ -1,4 +1,4 @@
-import * as M from './model.js?v=135';
+import * as M from './model.js?v=140';
 import {isFlaskSlot} from './flask-belt.js?v=108';
 import {saveStashSlots,stashSlots,validStashSlot} from './stash-slots.js';
 
@@ -16,7 +16,7 @@ function stack(kind,key,quantity,name,description,extra={}){return {id:`supply:$
 export function currencies(profile,heroId){
  const c=profile.characters?.[heroId],entries=[];
  if(c)entries.push(stack('gold',c.id,c.gold,'金幣','購買、強化、合成與製作時消耗。',{shared:false,usePanel:'merchant'}),stack('shard',c.id,c.shards,'碎晶','強化裝備、拆卸寶石與提升藥水品質時消耗。',{shared:false,usePanel:'forge'}));
- for(const d of [1,2,3])entries.push(stack('mark',String(d),profile.marks?.[d]??0,`${M.DIFFICULTIES[d].name}印記`,'交給營地印記收藏家，兌換指定流派與部位的套裝。',{difficulty:d,usePanel:'sets'}));
+ for(const d of [1,2,3])entries.push(stack('mark',String(d),profile.marks?.[d]??0,`${M.DIFFICULTIES[d].name}印記`,'交給營地印記收藏家兌換返脈石。',{difficulty:d,usePanel:'sets'}));
  return entries;
 }
 export function resourceEntries(profile,heroId,{includePersonal=true}={}){

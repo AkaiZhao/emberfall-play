@@ -1,13 +1,13 @@
 import {pixelMapArt} from './pixel-map-art.js?v=108';
-import {ENDGAME_UNLOCK_REASON,RIFT_THEMES,GEAR_FAMILIES,riftPreview,riftChapterTier} from './rift-model.js?v=130';
-import {DIFFICULTIES,UNIQUES} from './model.js?v=135';
+import {ENDGAME_UNLOCK_REASON,RIFT_THEMES,GEAR_FAMILIES,riftPreview,riftChapterTier} from './rift-model.js?v=140';
+import {DIFFICULTIES,UNIQUES} from './model.js?v=140';
 import {GUARDIANS} from './endgame-combat.js?v=108';
 import {hordeDensity} from './horde-trial.js?v=108';
 import {lootLevelBand} from './encounter-context.js?v=108';
 
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const emblemNames={1:'燼冠',2:'潮鐐',3:'雷鏡'};
-const features={vault:'菁英守衛與寶藏分岔，結算裝備較多。',forge:'試煉路線與鍛造素材，集中取得強化石與重鑄石。',contract:'菁英獵場，配合掉落偏向追尋流派裝備。',royal:'守衛與秘庫寶藏，結算額外裝備與 T3 寶石。',hunt:'菁英圍剿與挑戰守衛，取得破界所需徽記。',sanctum:'星冠守衛與風險詞條，追尋套裝或獨特裝備。'};
+const features={vault:'菁英守衛與寶藏分岔，首領掉落較多。',forge:'試煉路線與鍛造素材，集中取得強化石與重鑄石。',contract:'菁英獵場，配合掉落偏向追尋流派裝備。',royal:'守衛與秘庫寶藏，首領額外掉裝，結算給 T3 寶石。',hunt:'菁英圍剿與挑戰守衛，取得破界所需徽記。',sanctum:'星冠守衛與風險詞條，追尋套裝或獨特裝備。'};
 function mapArt(theme,name){
  return pixelMapArt(theme,esc(name)+'場景示意');
 }
@@ -19,7 +19,7 @@ function option(draft,key,values,label){
 function rewardText(theme){
  const count=theme==='final'?4:['vault','royal'].includes(theme)?3:2;
  const stones=theme==='forge'?6:theme==='final'?8:2,reforges=theme==='forge'?3:1;
- return `裝備 ×${count}（黃色以上）<span>強化石 ×${stones} · 重鑄石 ×${reforges}${theme==='royal'?' · T3 清明寶石 ×1':''}</span>`;
+ return `首領掉落 ×${count}（黃色以上）<span>強化石 ×${stones} · 重鑄石 ×${reforges}${theme==='royal'?' · T3 清明寶石 ×1':''}</span>`;
 }
 
 function mapCard(profile,c,draft,theme,{end,levels,challenge}){

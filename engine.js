@@ -13,7 +13,7 @@ import {installBasicAttacks,updateInheritedBasic} from './basic-attack-combat.js
 import {installAutomaticAuras} from './automatic-auras.js?v=108';
 import {ExpeditionRisk} from './expedition-risk.js?v=108';
 import {pointerAimPoint,playerAimAngle,playerAimPlacement} from './aiming.js?v=108';
-import {WorldObjects} from './world-objects.js?v=136';
+import {WorldObjects} from './world-objects.js?v=140';
 import {beamBoundingRadius,circleIntersects,circleInBeam,circleInSector,projectileBodyRadius,segmentCircleEntry} from './combat-geometry.js?v=108';
 import {skillCue,projectileCue,travelCue,elementalSprite,hasTargetImpact,targetImpactCue} from './combat-vfx.js?v=126';
 import {movementTiming} from './hero-motion.js?v=127';
@@ -22,7 +22,7 @@ import {CombatHitFeedback} from './combat-hit-feedback.js?v=123';
 import {pickupAllowed} from './pickup-filter.js?v=108';
 import {canStand,walkVisible,nearestGround,moveOnTerrain,approachOnTerrain,terrainBounds} from './room-terrain.js?v=108';
 import {EndgameCombat} from './endgame-combat.js?v=108';
-import {stats,addXP,isRingHero,ringBudget,rollDropLevel,ROOMS,completeZone,FLASKS,ABILITIES,availableSkills,skillLoadout,abilityFor,DIFFICULTIES,equipmentAuras,equipmentTriggers,triggerAbility,resourceCost,sumResourceCosts,summonUnitResourceCost,autoSkill,weaponDefinition,flaskDefinition,makeFlask,rollResourceLoot,SHRINES,skillCategory,auraLoadout,summonPlan,summonCapacity,movementSkill,reconcileSkillLoadouts,rollEquipmentLoot,areaLevel,SETS,recordAchievementKill,recordAchievementShrine} from './model.js?v=135';
+import {stats,addXP,isRingHero,ringBudget,rollDropLevel,ROOMS,completeZone,FLASKS,ABILITIES,availableSkills,skillLoadout,abilityFor,DIFFICULTIES,equipmentAuras,equipmentTriggers,triggerAbility,resourceCost,sumResourceCosts,summonUnitResourceCost,autoSkill,weaponDefinition,flaskDefinition,makeFlask,rollResourceLoot,SHRINES,skillCategory,auraLoadout,summonPlan,summonCapacity,movementSkill,reconcileSkillLoadouts,rollEquipmentLoot,rollItemDrop,paidBossEquipment,areaLevel,SETS,recordAchievementKill,recordAchievementShrine} from './model.js?v=140';
 import {ChapterCombat} from './chapter-combat.js?v=108';
 import {EnemyCombat} from './enemy-combat.js?v=123';
 import {canChapter} from './campaign-progress.js?v=108';
@@ -30,7 +30,7 @@ import {chapterDefinition} from './chapter-data.js?v=108';
 import {contextBand} from './encounter-context.js?v=108';
 import {installGameplay} from './gameplay-runtime.js?v=129';
 import {SetCombat} from './set-combat.js?v=123';
-import {Expedition} from './expedition.js?v=136';
+import {Expedition} from './expedition.js?v=140';
 import {MinionCombat} from './minion-combat.js?v=108';
 import {RangerCombat} from './ranger-combat.js?v=129';
 import {RingCombat,debuffStrength} from './ring-combat.js?v=108';
@@ -348,8 +348,19 @@ export class Game{
   if(this.training){if(e.trainingDummy)e.hp=e.maxHp;return;}if(!this.enemies.includes(e))return;this.expeditionRisk?.onKill(e);if(!this._identityHit?.options?.ringSecondary){this.rangerCombat.onKill(e);this.setCombat.onKill(e);}const lootStats=hordeLootStats(this.lootStats(),e),lootOwner={...this.c,level:this.c.level},finalBoss=e.type==='boss'&&!e.summoned&&this.currentRoom().type==='boss';this.enemies=this.enemies.filter(n=>n!==e);this.runKills++;this.c.kills++;recordAchievementKill(this.c,e,this.diff,this.room,this.chapter||1,{campaign:!this.runContext||this.runContext.kind==='campaign'});if(!e.summoned)this.mana=Math.min(this.s.mana,this.mana+(this.s.manaOnKill||0)*hordeReward(e));this.refillFlasks((e.summoned?0:e.type==='boss'?15:e.type==='miniboss'?8:isElite(e)?4:.5)*(1+this.s.chargeGain)*hordeReward(e));this.hp=this.healValue(this.s.hp*this.s.killHeal*hordeReward(e));
   const unified=isRingHero(this.c),prior=unified?ringBudget(this.c):this.c.points,lv=addXP(this.c,Math.max(1,Math.floor((e.type==='boss'?220:e.type==='miniboss'?120:isElite(e)?40:12)*this.diff*(e.summoned?.2:1)*(1+(this.s.experienceGain||0))*hordeReward(e))));if(lv){this.refresh();this.hp=this.healValue(this.s.hp*.15);this.mana=Math.min(this.s.mana,this.mana+this.s.mana*.15);this.float(this.player.x,this.player.y-50,'等級提升！','#edc989');this.emit('level',{points:(unified?ringBudget(this.c):this.c.points)-prior,unified,levels:lv});}
   const reward=scaleHordeResource(rollResourceLoot(isElite(e)?'elite':e.type,e.level||this.c.level,this.diff,this.rand,e.summoned),e,this.rand),gold=reward.gold;this.c.gold+=gold;this.runGold+=gold;if(gold){if(e.hordeFodder)this.horde.addGold(gold,e);else this.float(e.x,e.y-14,'+'+gold+' 金','#d2b771');}if(!e.summoned)this.emit('resourceLoot',reward);if(!e.hordeFodder||this.horde.allowDeathFx())this.fx(e.x,e.y,e.r*2,isBoss(e)?'#ce8558':'#976954','burst');
-  const source=e.type==='boss'?'boss':e.type==='miniboss'?'miniboss':isElite(e)?'elite':'normal';const items=e.summoned?[]:rollEquipmentLoot(lootOwner,this.diff,source,this.room,this.rand,lootStats,{...(this.runContext||{}),chapter:this.chapter||1});
-   for(const item of items){if(!pickupAllowed(this.c,item))continue;if(this.protectedLoot(item))this.preserveGround(item);this.addGroundDrop({x:e.x,y:e.y,item,t:0});}
+  const source=e.type==='boss'?'boss':e.type==='miniboss'?'miniboss':isElite(e)?'elite':'normal';
+  const context={...(this.runContext||{}),chapter:this.chapter||1};
+  const items=e.summoned?[]:rollEquipmentLoot(lootOwner,this.diff,source,this.room,this.rand,lootStats,context);
+  const room=this.currentRoom();
+  if(!e.summoned&&room.type==='treasure'&&this.wave>=room.waves&&!this.horde?.pending&&!this.enemies.some(enemy=>!enemy.summoned)){
+   items.push(rollItemDrop(lootOwner,this.diff,this.rand,{room:this.room,source,minimumRarity:1,chapter:context.chapter,context,lootStats}));
+  }
+  if(finalBoss&&context.bossEquipment)items.push(...paidBossEquipment(this.c,context));
+  for(const item of items){
+   if(!item||!pickupAllowed(this.c,item))continue;
+   if(this.protectedLoot(item))this.preserveGround(item);
+   this.addGroundDrop({x:e.x,y:e.y,item,t:0});
+  }
    if(finalBoss)this.emit('bossMarks',{difficulty:this.diff,amount:this.diff});
   if(!e.summoned&&this.rand()<(e.type==='boss'?.2:e.type==='miniboss'?.1:isElite(e)?.04:.006)*hordeReward(e)){const types=Object.keys(FLASKS),type=types[Math.min(types.length-1,Math.floor(this.rand()*types.length))],item=makeFlask(type,(this.runContext?.kind==='endgame'?Math.min(this.room>=3?99:98,(this.room>=3?97:96)+Math.floor(this.rand()*3)):rollDropLevel(this.diff,this.room,source,this.rand,this.chapter||1)),this.rand,true);this.c.flaskBag??=[];if(this.c.flaskBag.length<36){this.c.flaskBag.push(item);this.emit('flaskLoot',item);}else this.c.shards+=2;}
   if(finalBoss){this.collectAll();if(!this.runContext||this.runContext.kind==='campaign')completeZone(this.c,this.diff,7,this.chapter||1);this.c.clears++;this.c.best=Math.max(this.c.best,this.diff);this.enemies=[];this.hazards=[];this.bullets=[];this.enemyFields=[];this.cleared=true;this.mode='victory';this.channel=null;if(this.expedition.currentID)this.expedition.clearedNodes.add(this.expedition.currentID);this.emit('victory');}else this.emit('kill');
@@ -363,9 +374,9 @@ export class Game{
   if(!pickupAllowed(this.c,drop.item)&&!this.c.groundLoot?.some(item=>item.id===drop.item.id)){this.drops=this.drops.filter(d=>d!==drop);return true;}
   if(this.c.bag.length<150){this.removeGround(drop.item);this.c.bag.push(drop.item);this.runLoot++;this.emit('loot',drop.item);}
   else if(this.protectedLoot(drop.item)){
-   this.c.pendingLoot??=[];
-   if(this.c.pendingLoot.length>=150){this.preserveGround(drop.item);if(!drop.warned){drop.warned=true;this.emit('lootBlocked',{item:drop.item});}return false;}
-   this.removeGround(drop.item);this.c.pendingLoot.push(drop.item);this.runLoot++;this.emit('lootOverflow',{item:drop.item,count:this.c.pendingLoot.length});
+   this.preserveGround(drop.item);
+   if(!drop.warned){drop.warned=true;this.emit('lootBlocked',{item:drop.item});}
+   return false;
   }else{this.emit('bagfull');}
   this.drops=this.drops.filter(d=>d!==drop);return true;
  }

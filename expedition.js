@@ -2,10 +2,10 @@ import {decorateRank} from './enemy-rarity.js?v=108';
 import {ROOM_SCALE,expandPoint} from './world-space.js?v=108';
 import {setEnemyDefense} from './elemental-rules.js?v=108';
 import {terrainFor} from './room-terrain.js?v=108';
-import {createRiftRoute,seededRng} from './rift-model.js?v=130';
+import {createRiftRoute,seededRng} from './rift-model.js?v=140';
 import {chapterDefinition,ALL_MINIBOSSES} from './chapter-data.js?v=108';
-import * as WorldModel from './model.js?v=135';
-import {ROOM_TYPES,MINIBOSSES3,createRoute,routeNode,routeChoices} from './route-model.js?v=130';
+import * as WorldModel from './model.js?v=140';
+import {ROOM_TYPES,MINIBOSSES3,createRoute,routeNode,routeChoices} from './route-model.js?v=140';
 
 const clamp=(n,lo,hi)=>Math.max(lo,Math.min(hi,n));
 const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
@@ -85,10 +85,8 @@ export class Expedition{
  roomLoot(){const room=this.currentRoom();return {roomLootMultiplier:room.lootMultiplier,roomRarityBonus:room.rarityBonus};}
  onRoomCleared(){
   const g=this.g,room=this.currentRoom();if(!g.chapterCombat?.roomReady()||!this.currentID||this.clearedNodes.has(this.currentID)||g.enemies.length||g.horde?.pending||g.wave<room.waves)return false;
-  // Build the chest before marking it claimed so generation failures do not erase a reward.
-  const chest=room.type==='treasure'?WorldModel.rollItemDrop(g.c,g.diff,g.rand,{minimumRarity:1,room:room.layer,source:'chest',chapter:g.chapter||1,context:g.runContext,lootStats:g.lootStats()}):null;
   this.clearedNodes.add(this.currentID);g.cleared=true;if(!g.runContext||g.runContext.kind==='campaign')WorldModel.completeZone(g.c,g.diff,room.layer,g.chapter||1);
-  if(chest){if(g.protectedLoot(chest))g.preserveGround(chest);g.addGroundDrop(g.placeActor({item:chest,t:0},560,340));const keys=['reforge','reroll','chisel','ascend'],key=keys[this.roll(keys.length)];g.emit('resourceLoot',{gold:0,materials:[{key,count:1}],gems:[]});g.fx(560,340,90,'#e4c16e','shock',.8);}
+  if(room.type==='treasure'){const keys=['reforge','reroll','chisel','ascend'],key=keys[this.roll(keys.length)];g.emit('resourceLoot',{gold:0,materials:[{key,count:1}],gems:[]});g.fx(560,340,90,'#e4c16e','shock',.8);}
   g.horde?.flushGold();g.collectAll();g.emit('clear');return true;
  }
  onShrineActivated(shrine){if(this.currentRoom().type!=='recovery'||!this.g.shrines.includes(shrine)||!shrine.recoveryChoice)return false;for(const choice of this.g.shrines)if(choice.recoveryChoice)choice.used=true;return true;}

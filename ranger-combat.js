@@ -1,5 +1,5 @@
 import {beamBoundingRadius,circleInBeam} from './combat-geometry.js?v=108';
-import {autoSkill,skillLoadout,skillCategory,skillManaCost,resourceCost} from './model.js?v=135';
+import {autoSkill,skillLoadout,skillCategory,skillManaCost,resourceCost} from './model.js?v=140';
 import {MAX_AILMENT_DURATION} from './elemental-rules.js?v=108';
 import {playerAimPlacement} from './aiming.js?v=108';
 import {skillWeaponCompatible} from './skill-weapon-rules.js?v=129';

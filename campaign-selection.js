@@ -1,5 +1,5 @@
 import {pixelMapArt} from './pixel-map-art.js?v=108';
-import {DIFFICULTIES,canDifficulty,canChapter,chapterDefinition,progressFor,equipmentDropBand} from './model.js?v=135';
+import {DIFFICULTIES,canDifficulty,canChapter,chapterDefinition,progressFor,equipmentDropBand} from './model.js?v=140';
 import {HERO_RESISTANCE_PENALTY} from './elemental-rules.js?v=108';
 import {HORDE_RULES,hordeDensity} from './horde-trial.js?v=108';
 const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -12,7 +12,8 @@ const threats={
 const lockIcon='<svg aria-hidden="true" viewBox="0 0 24 24"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v12H5zM12 15v3"/></svg>';
 export function difficultySelector(c){
  const selected=c.difficulty,d=DIFFICULTIES[selected]||DIFFICULTIES[1],penalty=HERO_RESISTANCE_PENALTY[selected]||0,normalDrop=d.loot.normal*HORDE_RULES.equipment;
- return `<section class="campaign-difficulty" aria-label="出發難度與差異"><nav class="expedition-difficulties" aria-label="出發難度">${[1,2,3].map(id=>{const rule=DIFFICULTIES[id],unlocked=canDifficulty(c,id);return `<button type="button" data-difficulty="${id}" class="${id===selected?'selected':''}" aria-pressed="${id===selected}" ${unlocked?'':'disabled'} title="${unlocked?'切換至'+rule.name:'完成上一難度全部章節後解鎖'} · 基礎生命×${rule.hp}／傷害×${rule.damage}">${unlocked?'':lockIcon}<span>${rule.name}</span><small>怪量 ×${hordeDensity(id)}</small></button>`;}).join('')}</nav><div class="difficulty-overview" data-difficulty-overview="${selected}"><dl><div><dt>敵人生命／傷害</dt><dd>×${d.hp}／×${d.damage}</dd></div><div><dt>每波怪量</dt><dd>×${hordeDensity(selected)}</dd></div><div><dt>玩家全元素抗性</dt><dd class="${penalty?'difficulty-penalty':''}">${penalty?'−'+Math.round(penalty*100)+' 百分點':'無額外懲罰'}</dd></div><div><dt>一般怪／菁英掉裝</dt><dd>${pct(normalDrop)}／${pct(d.loot.elite)}</dd></div></dl><p>${threats[selected]?.join(' ')||threats[1].join(' ')}</p><small>敵人從地圖各處分批增援，怪量依房型與樓層調整。掉裝為未加成基礎機率，裝等區間見下方卡片。</small></div></section>`;
+ const description=`<p>${threats[selected]?.join(' ')||threats[1].join(' ')}</p><small>敵人從地圖各處分批增援，怪量依房型與樓層調整。掉裝為未加成基礎機率，裝等區間見下方卡片。</small>`;
+ return `<section class="campaign-difficulty" aria-label="出發難度與差異"><nav class="expedition-difficulties" aria-label="出發難度">${[1,2,3].map(id=>{const rule=DIFFICULTIES[id],unlocked=canDifficulty(c,id);return `<button type="button" data-difficulty="${id}" class="${id===selected?'selected':''}" aria-pressed="${id===selected}" ${unlocked?'':'disabled'} title="${unlocked?'切換至'+rule.name:'完成上一難度全部章節後解鎖'} · 基礎生命×${rule.hp}／傷害×${rule.damage}">${unlocked?'':lockIcon}<span>${rule.name}</span><small>怪量 ×${hordeDensity(id)}</small></button>`;}).join('')}</nav><div class="difficulty-overview" data-difficulty-overview="${selected}"><dl><div><dt>敵人生命／傷害</dt><dd>×${d.hp}／×${d.damage}</dd></div><div><dt>每波怪量</dt><dd>×${hordeDensity(selected)}</dd></div><div><dt>玩家全元素抗性</dt><dd class="${penalty?'difficulty-penalty':''}">${penalty?'−'+Math.round(penalty*100)+' 百分點':'無額外懲罰'}</dd></div><div><dt>一般怪／菁英掉裝</dt><dd>${pct(normalDrop)}／${pct(d.loot.elite)}</dd></div></dl><div class="difficulty-description">${description}</div><details class="difficulty-disclosure"><summary>難度詳情</summary>${description}</details></div></section>`;
 }
 
 function chapterArt(id){

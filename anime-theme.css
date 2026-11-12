@@ -745,11 +745,6 @@ body:not(.mobile-phone):has(.arena.in-combat) #toasts { bottom: 101px; }
   body.mobile-phone #panel-dialog #panel-tabs > button,
   body.mobile-phone #panel-dialog.route-dialog .adventure-tabs button,
   body.mobile-phone #panel-dialog .campaign-difficulty .expedition-difficulties > button { min-height: 44px; }
-  body.mobile-phone #panel-dialog .inventory-view-tabs { display: flex; margin-bottom: 5px; padding-bottom: 4px; }
-  body.mobile-phone #panel-dialog .inventory-view-tabs > button { flex: 1; margin: 0; }
-  body.mobile-phone #panel-dialog .inventory-workbench { display: block; }
-  body.mobile-phone #panel-dialog .inventory-view-bag .paperdoll-pane,
-  body.mobile-phone #panel-dialog .inventory-view-wear .backpack-pane { display: none; }
   body.mobile-phone .inventory-dialog .worn-equipment .paperdoll .inventory-cell { aspect-ratio: auto; height: 54px; }
   body.mobile-phone .inventory-dialog .backpack-grid.unified-item-grid { grid-template-columns: repeat(auto-fill, minmax(48px, 1fr)); }
 }

@@ -1,4 +1,4 @@
-import * as M from './model.js?v=135';
+import * as M from './model.js?v=140';
 import {appearancePickerMarkup} from './appearance-picker.js?v=124';
 import {openProfileStore} from './profile-storage.js?v=108';
 import {cloudEndpoints, createCloudClient} from './cloud-client.js?v=108';

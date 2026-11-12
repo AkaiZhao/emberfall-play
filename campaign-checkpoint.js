@@ -1,9 +1,9 @@
-import {createRoute,routeNode} from './route-model.js?v=130';
+import {createRoute,routeNode} from './route-model.js?v=140';
 import {canChapter,progressFor} from './campaign-progress.js?v=108';
-import {validWorldObjects} from './rift-model.js?v=130';
+import {validWorldObjects} from './rift-model.js?v=140';
 import {terrainFor} from './room-terrain.js?v=108';
 import {ROOM_SCALE} from './world-space.js?v=108';
-import {SHRINES,auraLoadout} from './model.js?v=135';
+import {SHRINES,auraLoadout} from './model.js?v=140';
 import {migrateFlaskCheckpoint,restoreFlaskBelt,snapshotFlaskBelt,validFlaskCheckpoint} from './flask-belt.js?v=108';
 
 const finite=(value,max)=>Number.isFinite(value)&&value>=0&&value<=max;

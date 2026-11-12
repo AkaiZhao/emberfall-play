@@ -1,8 +1,8 @@
 import {MANA_SIPHON_RATE} from './mana-economy.js?v=108';
 import {equipmentIcon} from './equipment-visuals.js?v=124';
 import {lootLevelBand} from './encounter-context.js?v=108';
-import {riftChapterTier} from './rift-model.js?v=130';
-import * as M from './model.js?v=135';
+import {riftChapterTier} from './rift-model.js?v=140';
+import * as M from './model.js?v=140';
 import {ACTOR_DEFENSES,ACTOR_STATUSES,GROUND_STATUSES,PLAYER_STATUSES,actorStatusIconMarkup} from './status-effects.js?v=130';
 
 export const CAMP_GUIDE={
@@ -10,14 +10,14 @@ export const CAMP_GUIDE={
   ['移動與互動','WASD、方向鍵或左鍵點地移動。點 NPC、祭壇或寶箱會走近後互動，也可在附近按 E。'],
   ['選擇遠征','營地傳送門選難度與章節。依房間連線前進，擊敗章節首領後開放下一章。裂隙與終局需對應入場道具。'],
   ['房間與祭壇','戰鬥房從地圖各處分批增援，怪量隨房型、樓層與難度提高。首領房先打前哨守衛。福利追咒持續 2 個戰鬥房；祭壇祝福維持 180 秒，新祝福取代舊祝福。'],
-  ['營地服務','工匠處理交易、藥水與鍛造。倉庫帳號共用。印記收藏家兌換套裝，木樁用於傷害測試。']
+  ['營地服務','工匠處理交易、藥水與鍛造。倉庫帳號共用。印記收藏家兌換返脈石，木樁用於傷害測試。']
  ]},
  gear:{label:'裝備',sections:[
   ['掉落與裝等','掉落率 Q 提高裝備出現機率，稀有度 R 改善已掉落裝備的顏色。裝等決定底材白值、需求和擲值上限。'],
   ['獨特裝備','每件獨特裝備有固定裝等與詞條種類，數值仍會浮動。只有房間的掉落裝等涵蓋該裝等，才會進入掉落候選。收集後可在圖鑑查看樓層。'],
   ['詞條品質','白裝 1 條、藍裝 2–3 條、黃裝 3–5 條、紫裝 3–6 條、紅裝 4–8 條、橘裝 5–9 條。T1 最強，紅裝至少 2 條 T1，橘裝至少 3 條。'],
   ['搭配與部位','弓的副手限箭袋。雙手武器通常占用副手，雙持條件由燼脈圖解鎖。重甲提高護甲但降低速度，披風提供裝備光環，護符和戒指以詞條為主。'],
-  ['拾取與比較','在背包按顏色設定拾取。滑過或點選裝備可與已穿戴品比較，拖曳可換裝。背包滿時，珍貴裝備可進待領。'],
+  ['拾取與比較','在背包按顏色設定拾取。滑過或點選裝備可與已穿戴品比較，拖曳可換裝。背包滿時，珍貴裝備留在地面。'],
   ['套裝與印記',`同套 2／3／5 件生效。單把雙手武器計 2 件，雙持各計 1 件，同名戒指部件只計一次。首領印記可兌換指定部件，橘套需${M.DIFFICULTIES[3].name}資格。`]
  ]},
  forge:{label:'鍛造',sections:[
