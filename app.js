@@ -2,7 +2,7 @@ import {CombatAudio,savedVolume,storeVolume,soundForSkill,soundForEffect} from '
 import {createGameNotices} from './game-notices.js?v=143';
 import {majorEnemyArea,majorEnemyCharge,majorEnemyIntent} from './enemy-warnings.js?v=108';
 import {createCloudClient} from './cloud-client.js?v=108';
-import {RELEASE_NOTES} from './release-notes.mjs?v=146';
+import {RELEASE_NOTES} from './release-notes.mjs?v=147';
 import {renderReleaseHistory} from './release-history.js?v=134';
 import {createVerifiedPanel} from './verified-ui.js?v=135';
 import {MANA_SIPHON_RATE,manaSiphonBudget} from './mana-economy.js?v=108';
@@ -38,7 +38,7 @@ import {PASSIVE_LAYOUT,ROLE_BRANCHES,CONDITION_LABELS} from './passive-constella
 import * as Rifts from './rift-model.js?v=140';
 import {paidSaveCandidate,refreshPaidCheckpoint} from './rift-runtime.js?v=108';
 import * as M from './model.js?v=140';
-import {Game,abilityDamageTypes} from './engine.js?v=143';
+import {Game,abilityDamageTypes} from './engine.js?v=147';
 import {projectileBodyRadius} from './combat-geometry.js?v=108';
 import * as SkillText from './skill-presentation.js?v=130';
 import {Renderer} from './render.js?v=135';
@@ -622,9 +622,20 @@ async function toggleConfiguredAura(id){
 function bloodResource(stats=e.s){return stats.resourceClass?['berserker','blood'].includes(stats.resourceClass):c.cls==='berserker';}
 function summonDraftRow(def){const unitResourceCost=M.summonUnitResourceCost(def,e.s);return {id:def.id,count:0,limit:def.summon.count,capacityCost:def.summon.capacityCost??1,unitResourceCost,unitMana:unitResourceCost.mana,unitLife:unitResourceCost.life};}
 function markAvailability(button,state){
- const view=availabilityView(state);button.classList.toggle('unavailable',view.unavailable);button.setAttribute('aria-disabled',String(view.unavailable));button.dataset.unavailableReason=view.reason;
- let note=button.querySelector('.action-reason');if(!note){note=document.createElement('span');note.className='action-reason';button.append(note);}note.textContent=view.reason;note.hidden=!view.unavailable;
- if(view.reason){button.title+=' · '+view.reason;button.setAttribute('aria-label',(button.getAttribute('aria-label')||'')+'，'+view.reason);}return view;
+ const view=availabilityView(state),cooling=state.blockedByCooldown&&view.cooldown>0;
+ button.classList.toggle('unavailable',view.unavailable&&!cooling);
+ button.setAttribute('aria-disabled',String(view.unavailable));button.dataset.unavailableReason=view.reason;
+ const cover=button.querySelector('.cooldown');
+ cover.classList.toggle('active',!!cooling);
+ if(cooling){
+  const seconds=view.cooldown,remaining=Math.min(1,seconds/(state.cooldownDuration||seconds));
+  cover.style.setProperty('--cooldown-remaining',(remaining*100)+'%');
+  cover.textContent=seconds<1?(Math.ceil(seconds*10)/10).toFixed(1):String(Math.ceil(seconds));
+ }
+ let note=button.querySelector('.action-reason');
+ if(!note){note=document.createElement('span');note.className='action-reason';button.append(note);}
+ note.textContent=view.reason;note.hidden=!view.unavailable||!!cooling;
+ if(view.reason){button.title+=' · '+view.reason;button.setAttribute('aria-label',(button.getAttribute('aria-label')||'')+'，'+view.reason);}
 }
 function resourceRateText(def,stats=e.s){
  const cost=M.resourceCost(def,stats);if(def.type!=='channel')return costText(cost);
@@ -1214,11 +1225,11 @@ function updateHUD(){const low=lowHealthActive(e);$('#low-health-warning').class
  const autoStatus=$('#auto-combat-status');autoStatus.classList.toggle('auto-off',!autoOn);autoStatus.classList.toggle('channel-running',!!channel);autoStatus.querySelector('b').textContent=autoOn?'自動普攻 ON':'自動普攻 OFF';autoStatus.querySelector('span').textContent=channel?`${M.ABILITIES[channel.id]?.name||'技能'} · 持續施放`:basicSequence.length>1?'普攻輪替 '+basicSequence.length+'式':basicSequence[0]?.name||'普通攻擊';autoStatus.querySelector('small').textContent=channel?resourceRateText(M.abilityFor(c,channel.id),s):'攻速加成';autoStatus.title='範圍內有敵人時自動普攻 · J 切換';
  $('#touch-attack').setAttribute('aria-pressed',String(autoOn));$('#touch-attack').setAttribute('aria-label',autoOn?'關閉自動戰鬥':'開啟自動戰鬥');$('#touch-attack').classList.toggle('auto-on',autoOn);$('#touch-attack small').textContent=autoOn?'自動 ON':'自動 OFF';
  const slots=M.skillLoadout(c);for(let i=0;i<3;i++){
-  const def=slots[i]?M.abilityFor(c,slots[i]):null,button=$(`[data-action="skill${i}"]`),availability=def?e.skillAvailability(def.id,{source:'manual'}):{usable:false,reason:'未配置技能',cooldown:0},cover=button.querySelector('.cooldown'),aura=def?.type==='aura',auraOn=!!def&&e.auraIds?.has(def.id),channelOn=!!def&&channel?.id===def.id;
+  const def=slots[i]?M.abilityFor(c,slots[i]):null,button=$(`[data-action="skill${i}"]`),availability=def?e.skillAvailability(def.id,{source:'manual'}):{usable:false,reason:'未配置技能',cooldown:0},aura=def?.type==='aura',auraOn=!!def&&e.auraIds?.has(def.id),channelOn=!!def&&channel?.id===def.id;
   $(`#skill${i}-icon use`).setAttribute('href','#i-'+(def?.icon||'tree'));$(`#skill${i}-name`).textContent=def?.name||'未配置';$(`#skill${i}-cost`).textContent=def?(channelOn?'放開／再按停止':aura?(auraOn?'ON · ':'OFF · ')+costText(e.auraResourceCost(def))+'/秒':resourceRateText(def,s)):'';
-  button.setAttribute('aria-label',def?`${SLOT_LABELS[i]}，${def.name} 等級 ${def.level}，${channelOn?'放開／再按停止。':''}${skillFacts(def)}，${skillSource(def.id)}`:`${SLOT_LABELS[i]}，技能欄位${i+1}未配置`);button.setAttribute('aria-pressed',String(auraOn||channelOn));button.title=SLOT_LABELS[i]+' · '+(def?def.name+' Lv.'+def.level+' · '+skillFacts(def):'未配置技能');button.classList.toggle('empty-skill',!def);button.classList.toggle('aura-active',!!auraOn);button.classList.toggle('toggle-aura',!!aura);button.classList.toggle('channel-active',channelOn);const view=markAvailability(button,availability),t=view.cooldown;cover.classList.toggle('active',t>0&&!aura&&!channelOn);cover.textContent=t<1?t.toFixed(1):Math.ceil(t);
+  button.setAttribute('aria-label',def?`${SLOT_LABELS[i]}，${def.name} 等級 ${def.level}，${channelOn?'放開／再按停止。':''}${skillFacts(def)}，${skillSource(def.id)}`:`${SLOT_LABELS[i]}，技能欄位${i+1}未配置`);button.setAttribute('aria-pressed',String(auraOn||channelOn));button.title=SLOT_LABELS[i]+' · '+(def?def.name+' Lv.'+def.level+' · '+skillFacts(def):'未配置技能');button.classList.toggle('empty-skill',!def);button.classList.toggle('aura-active',!!auraOn);button.classList.toggle('toggle-aura',!!aura);button.classList.toggle('channel-active',channelOn);markAvailability(button,availability);
  }
- const moveID=M.movementSkill(c),moveDef=moveID?M.abilityFor(c,moveID):null,moveState=e.actionAvailability('dodge'),moveCD=moveState.cooldown||0,moveButton=$('[data-action="dash"]'),dodge=moveButton.querySelector('.cooldown');dodge.classList.toggle('active',moveCD>0);dodge.textContent=moveCD<1?moveCD.toFixed(1):Math.ceil(moveCD);moveButton.querySelector('small').textContent=moveDef?.name||'閃避';moveButton.querySelector('use').setAttribute('href','#i-'+(moveDef?.icon||'wind'));moveButton.querySelector('em').textContent=costText(moveState.cost);moveButton.setAttribute('aria-label',DODGE_LABEL+' '+(moveDef?moveDef.name+'，'+skillFacts(moveDef):'免費閃避'));moveButton.title=DODGE_LABEL+' · '+(moveDef?skillFacts(moveDef):'免費閃避');markAvailability(moveButton,moveState);
+ const moveID=M.movementSkill(c),moveDef=moveID?M.abilityFor(c,moveID):null,moveState=e.actionAvailability('dodge'),moveButton=$('[data-action="dash"]');moveButton.querySelector('small').textContent=moveDef?.name||'閃避';moveButton.querySelector('use').setAttribute('href','#i-'+(moveDef?.icon||'wind'));moveButton.querySelector('em').textContent=costText(moveState.cost);moveButton.setAttribute('aria-label',DODGE_LABEL+' '+(moveDef?moveDef.name+'，'+skillFacts(moveDef):'免費閃避'));moveButton.title=DODGE_LABEL+' · '+(moveDef?skillFacts(moveDef):'免費閃避');markAvailability(moveButton,moveState);
  const army=e.armyPlan,armyState=e.actionAvailability('summon'),armyCost=costText(armyState.cost),armyButton=$('[data-action="summon"]'),living=(e.summons||[]).length,configured=army?.rows?.reduce((count,row)=>count+row.count,0)||0;armyButton.querySelector('small').textContent=living+'／'+configured+' 召喚';armyButton.querySelector('em').textContent=configured?armyCost+' · 重召':'遣散';armyButton.setAttribute('aria-label',`C 重召整支軍隊，存活 ${living}，配置 ${configured} 名，消耗 ${armyCost}`);armyButton.title=`C：重召 ${configured} 名永久盟友 · ${armyCost} · 角色容量 ${army?.capacity||4}`;markAvailability(armyButton,armyState);armyButton.classList.toggle('empty-skill',!configured&&!living);
 
  updateFlaskHUD();

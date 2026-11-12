@@ -17,13 +17,30 @@ export function installResourceAvailability(Game){
   const requiredWeapon=requiredSkillWeapon(id),weaponFailure=skillWeaponFailure(this.c,id);
   Object.assign(result,{requiredWeapon,weaponCompatible:!weaponFailure});
   if(stopping&&!weaponFailure)return {...result,usable:true,reason:'',cost:empty()};
-  let reason=weaponFailure||this.actionStateFailure(category==='aura'||category==='summon',{ignorePause});if(!reason&&category==='aura'&&!auraLoadout(this.c).includes(id))reason='請先在光環配置選擇此技能。';if(!reason&&cooldown>1e-8)reason='技能尚在冷卻（'+cooldown.toFixed(1)+' 秒）。';
+  let reason=weaponFailure||this.actionStateFailure(category==='aura'||category==='summon',{ignorePause});if(!reason&&category==='aura'&&!auraLoadout(this.c).includes(id))reason='請先在光環配置選擇此技能。';
+  if(!reason&&cooldown>1e-8)return {...result,reason:'技能尚在冷卻（'+cooldown.toFixed(1)+' 秒）。',blockedByCooldown:true};
   const assassin=this.gameplay?.assassin;if(!reason&&assassin){const error=this.skillError;if(!assassin.canStart(def))reason=this.skillError||'技能目前無法使用。';this.skillError=error;if(!reason&&id==='a_blink'&&!assassin.landing(def))reason='找不到安全落點。';}
   if(!reason)reason=this.resourceFailure(cost,def.type==='aura'&&result.drain.life>0?this.s.hp*.2:1);return {...result,usable:!reason,reason};
  };
  P.actionAvailability=function(action,options={}){
-  const base={usable:false,reason:'操作無效。',cost:empty(),cooldown:0};if(action==='dodge'){const id=movementSkill(this.c);if(id)return this.skillAvailability(id,options);const cooldown=Math.max(0,this.dodgeCD||0),reason=this.actionStateFailure(false,options)||(cooldown>1e-8?'翻滾尚在冷卻（'+cooldown.toFixed(1)+' 秒）。':'');return {...base,usable:!reason,reason,cooldown,cooldownDuration:1.6*(1-this.s.cdr)*(this.s.dodgeCDMultiplier??1)};}
+  const base={usable:false,reason:'操作無效。',cost:empty(),cooldown:0};
+  if(action==='dodge'){
+   const id=movementSkill(this.c);if(id)return this.skillAvailability(id,options);
+   const cooldown=Math.max(0,this.dodgeCD||0),failure=this.actionStateFailure(false,options),blockedByCooldown=!failure&&cooldown>1e-8;
+   const reason=failure||(blockedByCooldown?'翻滾尚在冷卻（'+cooldown.toFixed(1)+' 秒）。':'');
+   return {...base,usable:!reason,reason,cooldown,blockedByCooldown,cooldownDuration:1.6*(1-this.s.cdr)*(this.s.dodgeCDMultiplier??1)};
+  }
   if(action==='auras'){const ids=auraLoadout(this.c),cost=sumResourceCosts(ids.map(id=>resourceCost(this.ability(id),this.s))),drain=sumResourceCosts(ids.map(id=>this.auraResourceCost(id))),lifeFloor=drain.life>0?this.s.hp*.2:1;if(this.auraIds.size)return {...base,usable:true,reason:'',active:true,action:'stop',drain,lifeFloor};let reason=this.actionStateFailure(true,options);if(!reason&&!ids.length)reason='請先在光環配置選擇技能。';if(!reason)reason=this.resourceFailure(cost,lifeFloor);return {...base,usable:!reason,reason,cost,drain,lifeFloor,active:false};}
-  if(action==='summon'){const plan=summonPlan(this.c,this.s),cost=this.summonResourceCost(plan),cooldown=Math.max(0,this.summonCD||0);let reason=this.actionStateFailure(true,options);if(!reason&&cooldown>1e-8)reason='召喚編隊正在準備中（'+cooldown.toFixed(1)+' 秒）。';if(!reason&&!plan.valid)reason=plan.reason;if(!reason&&!plan.count&&!this.summons.length)reason='請先在召喚編隊配置數量。';if(!reason)reason=this.resourceFailure(cost);return {...base,usable:!reason,reason,cost,cooldown,cooldownDuration:1,plan};}return base;
+  if(action==='summon'){
+   const plan=summonPlan(this.c,this.s),cost=this.summonResourceCost(plan),cooldown=Math.max(0,this.summonCD||0);
+   let reason=this.actionStateFailure(true,options);
+   const blockedByCooldown=!reason&&cooldown>1e-8;
+   if(blockedByCooldown)reason='召喚編隊正在準備中（'+cooldown.toFixed(1)+' 秒）。';
+   if(!reason&&!plan.valid)reason=plan.reason;
+   if(!reason&&!plan.count&&!this.summons.length)reason='請先在召喚編隊配置數量。';
+   if(!reason)reason=this.resourceFailure(cost);
+   return {...base,usable:!reason,reason,cost,cooldown,blockedByCooldown,cooldownDuration:1,plan};
+  }
+  return base;
  };
 }

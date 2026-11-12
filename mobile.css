@@ -53,6 +53,7 @@ body.mobile-phone #panel-dialog{touch-action:manipulation}
  body.mobile-phone .skill-bar .skill-button svg{width:27px;height:27px;margin-top:-10px}
  body.mobile-phone .skill-bar .skill-button small{position:absolute;top:auto;bottom:7px;left:4px;right:4px;max-width:none;font-size:9px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e1dfc4}
  body.mobile-phone .skill-bar .skill-button :is(kbd,em){display:none}
+ body.mobile-phone .skill-bar .cooldown{padding-bottom:7px}
  body.mobile-phone .skill-bar [data-action=skill0]{right:70px;bottom:0}
  body.mobile-phone .skill-bar [data-action=skill1]{right:70px;bottom:70px}
  body.mobile-phone .skill-bar [data-action=skill2]{right:0;bottom:70px}
